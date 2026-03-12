@@ -1,0 +1,1002 @@
+[
+  {
+    "customer_id": 1,
+    "name": "Customer 1",
+    "email": "customer1@email.com",
+    "country": "Australia",
+    "signup_date": "2023-02-06",
+    "total_orders": 35,
+    "lifetime_value": 1325.67,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 2,
+    "name": "Customer 2",
+    "email": "customer2@email.com",
+    "country": "France",
+    "signup_date": "2023-05-16",
+    "total_orders": 44,
+    "lifetime_value": 1444.1,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 3,
+    "name": "Customer 3",
+    "email": "customer3@email.com",
+    "country": "Germany",
+    "signup_date": "2023-05-03",
+    "total_orders": 45,
+    "lifetime_value": 4366.9,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 4,
+    "name": "Customer 4",
+    "email": "customer4@email.com",
+    "country": "Germany",
+    "signup_date": "2023-11-25",
+    "total_orders": 19,
+    "lifetime_value": 4092.67,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 5,
+    "name": "Customer 5",
+    "email": "customer5@email.com",
+    "country": "USA",
+    "signup_date": "2023-06-14",
+    "total_orders": 24,
+    "lifetime_value": 3728.86,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 6,
+    "name": "Customer 6",
+    "email": "customer6@email.com",
+    "country": "Germany",
+    "signup_date": "2023-01-02",
+    "total_orders": 8,
+    "lifetime_value": 2320.85,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 7,
+    "name": "Customer 7",
+    "email": "customer7@email.com",
+    "country": "Australia",
+    "signup_date": "2023-06-09",
+    "total_orders": 41,
+    "lifetime_value": 1683.81,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 8,
+    "name": "Customer 8",
+    "email": "customer8@email.com",
+    "country": "UK",
+    "signup_date": "2023-05-01",
+    "total_orders": 45,
+    "lifetime_value": 524.44,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 9,
+    "name": "Customer 9",
+    "email": "customer9@email.com",
+    "country": "UK",
+    "signup_date": "2023-12-28",
+    "total_orders": 3,
+    "lifetime_value": 4727.07,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 10,
+    "name": "Customer 10",
+    "email": "customer10@email.com",
+    "country": "Australia",
+    "signup_date": "2023-05-08",
+    "total_orders": 38,
+    "lifetime_value": 3635.03,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 11,
+    "name": "Customer 11",
+    "email": "customer11@email.com",
+    "country": "Australia",
+    "signup_date": "2023-02-13",
+    "total_orders": 48,
+    "lifetime_value": 4851.16,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 12,
+    "name": "Customer 12",
+    "email": "customer12@email.com",
+    "country": "Germany",
+    "signup_date": "2023-08-11",
+    "total_orders": 11,
+    "lifetime_value": 2613.16,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 13,
+    "name": "Customer 13",
+    "email": "customer13@email.com",
+    "country": "Canada",
+    "signup_date": "2023-03-16",
+    "total_orders": 19,
+    "lifetime_value": 2170.66,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 14,
+    "name": "Customer 14",
+    "email": "customer14@email.com",
+    "country": "UK",
+    "signup_date": "2023-11-22",
+    "total_orders": 1,
+    "lifetime_value": 4975.92,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 15,
+    "name": "Customer 15",
+    "email": "customer15@email.com",
+    "country": "France",
+    "signup_date": "2023-05-23",
+    "total_orders": 41,
+    "lifetime_value": 2266.05,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 16,
+    "name": "Customer 16",
+    "email": "customer16@email.com",
+    "country": "USA",
+    "signup_date": "2023-08-10",
+    "total_orders": 8,
+    "lifetime_value": 2799.46,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 17,
+    "name": "Customer 17",
+    "email": "customer17@email.com",
+    "country": "France",
+    "signup_date": "2023-07-25",
+    "total_orders": 45,
+    "lifetime_value": 3617.03,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 18,
+    "name": "Customer 18",
+    "email": "customer18@email.com",
+    "country": "Germany",
+    "signup_date": "2023-03-01",
+    "total_orders": 34,
+    "lifetime_value": 2711.8,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 19,
+    "name": "Customer 19",
+    "email": "customer19@email.com",
+    "country": "Germany",
+    "signup_date": "2023-04-12",
+    "total_orders": 38,
+    "lifetime_value": 1838.1,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 20,
+    "name": "Customer 20",
+    "email": "customer20@email.com",
+    "country": "Germany",
+    "signup_date": "2023-09-27",
+    "total_orders": 31,
+    "lifetime_value": 3246.65,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 21,
+    "name": "Customer 21",
+    "email": "customer21@email.com",
+    "country": "UK",
+    "signup_date": "2023-02-28",
+    "total_orders": 8,
+    "lifetime_value": 180.23,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 22,
+    "name": "Customer 22",
+    "email": "customer22@email.com",
+    "country": "Canada",
+    "signup_date": "2023-07-25",
+    "total_orders": 27,
+    "lifetime_value": 2272.95,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 23,
+    "name": "Customer 23",
+    "email": "customer23@email.com",
+    "country": "UK",
+    "signup_date": "2023-02-13",
+    "total_orders": 1,
+    "lifetime_value": 4259.55,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 24,
+    "name": "Customer 24",
+    "email": "customer24@email.com",
+    "country": "France",
+    "signup_date": "2023-10-11",
+    "total_orders": 18,
+    "lifetime_value": 4941.37,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 25,
+    "name": "Customer 25",
+    "email": "customer25@email.com",
+    "country": "France",
+    "signup_date": "2023-07-18",
+    "total_orders": 46,
+    "lifetime_value": 1462.12,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 26,
+    "name": "Customer 26",
+    "email": "customer26@email.com",
+    "country": "France",
+    "signup_date": "2023-11-19",
+    "total_orders": 14,
+    "lifetime_value": 3294.64,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 27,
+    "name": "Customer 27",
+    "email": "customer27@email.com",
+    "country": "USA",
+    "signup_date": "2023-02-20",
+    "total_orders": 9,
+    "lifetime_value": 3086.54,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 28,
+    "name": "Customer 28",
+    "email": "customer28@email.com",
+    "country": "Canada",
+    "signup_date": "2023-11-23",
+    "total_orders": 23,
+    "lifetime_value": 2426.43,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 29,
+    "name": "Customer 29",
+    "email": "customer29@email.com",
+    "country": "Canada",
+    "signup_date": "2023-06-06",
+    "total_orders": 1,
+    "lifetime_value": 109.54,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 30,
+    "name": "Customer 30",
+    "email": "customer30@email.com",
+    "country": "France",
+    "signup_date": "2023-07-17",
+    "total_orders": 17,
+    "lifetime_value": 1741.02,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 31,
+    "name": "Customer 31",
+    "email": "customer31@email.com",
+    "country": "USA",
+    "signup_date": "2023-02-13",
+    "total_orders": 33,
+    "lifetime_value": 2240.21,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 32,
+    "name": "Customer 32",
+    "email": "customer32@email.com",
+    "country": "UK",
+    "signup_date": "2023-06-27",
+    "total_orders": 42,
+    "lifetime_value": 1341.56,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 33,
+    "name": "Customer 33",
+    "email": "customer33@email.com",
+    "country": "France",
+    "signup_date": "2023-02-19",
+    "total_orders": 8,
+    "lifetime_value": 692.09,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 34,
+    "name": "Customer 34",
+    "email": "customer34@email.com",
+    "country": "Germany",
+    "signup_date": "2023-10-22",
+    "total_orders": 35,
+    "lifetime_value": 4337.89,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 35,
+    "name": "Customer 35",
+    "email": "customer35@email.com",
+    "country": "UK",
+    "signup_date": "2023-08-10",
+    "total_orders": 33,
+    "lifetime_value": 2754.76,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 36,
+    "name": "Customer 36",
+    "email": "customer36@email.com",
+    "country": "Australia",
+    "signup_date": "2023-05-21",
+    "total_orders": 43,
+    "lifetime_value": 1588.04,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 37,
+    "name": "Customer 37",
+    "email": "customer37@email.com",
+    "country": "Australia",
+    "signup_date": "2023-10-04",
+    "total_orders": 24,
+    "lifetime_value": 797.7,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 38,
+    "name": "Customer 38",
+    "email": "customer38@email.com",
+    "country": "Germany",
+    "signup_date": "2023-03-08",
+    "total_orders": 43,
+    "lifetime_value": 3594.07,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 39,
+    "name": "Customer 39",
+    "email": "customer39@email.com",
+    "country": "France",
+    "signup_date": "2023-11-12",
+    "total_orders": 12,
+    "lifetime_value": 2496.78,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 40,
+    "name": "Customer 40",
+    "email": "customer40@email.com",
+    "country": "Germany",
+    "signup_date": "2023-07-07",
+    "total_orders": 18,
+    "lifetime_value": 421.72,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 41,
+    "name": "Customer 41",
+    "email": "customer41@email.com",
+    "country": "Australia",
+    "signup_date": "2023-05-10",
+    "total_orders": 14,
+    "lifetime_value": 3383.4,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 42,
+    "name": "Customer 42",
+    "email": "customer42@email.com",
+    "country": "Australia",
+    "signup_date": "2023-02-20",
+    "total_orders": 46,
+    "lifetime_value": 4671.42,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 43,
+    "name": "Customer 43",
+    "email": "customer43@email.com",
+    "country": "UK",
+    "signup_date": "2023-04-02",
+    "total_orders": 5,
+    "lifetime_value": 3030.55,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 44,
+    "name": "Customer 44",
+    "email": "customer44@email.com",
+    "country": "Australia",
+    "signup_date": "2023-02-06",
+    "total_orders": 24,
+    "lifetime_value": 4129.85,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 45,
+    "name": "Customer 45",
+    "email": "customer45@email.com",
+    "country": "USA",
+    "signup_date": "2023-01-12",
+    "total_orders": 11,
+    "lifetime_value": 3594.73,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 46,
+    "name": "Customer 46",
+    "email": "customer46@email.com",
+    "country": "Australia",
+    "signup_date": "2023-05-25",
+    "total_orders": 37,
+    "lifetime_value": 610.26,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 47,
+    "name": "Customer 47",
+    "email": "customer47@email.com",
+    "country": "France",
+    "signup_date": "2023-11-18",
+    "total_orders": 32,
+    "lifetime_value": 1730.95,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 48,
+    "name": "Customer 48",
+    "email": "customer48@email.com",
+    "country": "UK",
+    "signup_date": "2023-01-24",
+    "total_orders": 19,
+    "lifetime_value": 2279.77,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 49,
+    "name": "Customer 49",
+    "email": "customer49@email.com",
+    "country": "Canada",
+    "signup_date": "2023-03-07",
+    "total_orders": 16,
+    "lifetime_value": 481.31,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 50,
+    "name": "Customer 50",
+    "email": "customer50@email.com",
+    "country": "Canada",
+    "signup_date": "2023-07-24",
+    "total_orders": 42,
+    "lifetime_value": 1278.39,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 51,
+    "name": "Customer 51",
+    "email": "customer51@email.com",
+    "country": "France",
+    "signup_date": "2023-02-13",
+    "total_orders": 10,
+    "lifetime_value": 517.33,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 52,
+    "name": "Customer 52",
+    "email": "customer52@email.com",
+    "country": "Germany",
+    "signup_date": "2023-12-25",
+    "total_orders": 12,
+    "lifetime_value": 4374.21,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 53,
+    "name": "Customer 53",
+    "email": "customer53@email.com",
+    "country": "Australia",
+    "signup_date": "2023-01-17",
+    "total_orders": 40,
+    "lifetime_value": 2622.11,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 54,
+    "name": "Customer 54",
+    "email": "customer54@email.com",
+    "country": "USA",
+    "signup_date": "2023-05-07",
+    "total_orders": 42,
+    "lifetime_value": 1661.18,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 55,
+    "name": "Customer 55",
+    "email": "customer55@email.com",
+    "country": "USA",
+    "signup_date": "2023-05-22",
+    "total_orders": 23,
+    "lifetime_value": 3585.21,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 56,
+    "name": "Customer 56",
+    "email": "customer56@email.com",
+    "country": "Australia",
+    "signup_date": "2023-07-04",
+    "total_orders": 8,
+    "lifetime_value": 1516.2,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 57,
+    "name": "Customer 57",
+    "email": "customer57@email.com",
+    "country": "Germany",
+    "signup_date": "2023-06-08",
+    "total_orders": 35,
+    "lifetime_value": 4184.84,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 58,
+    "name": "Customer 58",
+    "email": "customer58@email.com",
+    "country": "UK",
+    "signup_date": "2023-07-19",
+    "total_orders": 11,
+    "lifetime_value": 2668.91,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 59,
+    "name": "Customer 59",
+    "email": "customer59@email.com",
+    "country": "UK",
+    "signup_date": "2023-03-12",
+    "total_orders": 2,
+    "lifetime_value": 4277.41,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 60,
+    "name": "Customer 60",
+    "email": "customer60@email.com",
+    "country": "Canada",
+    "signup_date": "2023-12-01",
+    "total_orders": 44,
+    "lifetime_value": 1094.68,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 61,
+    "name": "Customer 61",
+    "email": "customer61@email.com",
+    "country": "UK",
+    "signup_date": "2023-10-25",
+    "total_orders": 31,
+    "lifetime_value": 1954.74,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 62,
+    "name": "Customer 62",
+    "email": "customer62@email.com",
+    "country": "Germany",
+    "signup_date": "2023-12-16",
+    "total_orders": 26,
+    "lifetime_value": 2141.43,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 63,
+    "name": "Customer 63",
+    "email": "customer63@email.com",
+    "country": "USA",
+    "signup_date": "2023-02-11",
+    "total_orders": 17,
+    "lifetime_value": 188.01,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 64,
+    "name": "Customer 64",
+    "email": "customer64@email.com",
+    "country": "UK",
+    "signup_date": "2023-07-04",
+    "total_orders": 25,
+    "lifetime_value": 212.5,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 65,
+    "name": "Customer 65",
+    "email": "customer65@email.com",
+    "country": "Germany",
+    "signup_date": "2023-02-27",
+    "total_orders": 5,
+    "lifetime_value": 2822.25,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 66,
+    "name": "Customer 66",
+    "email": "customer66@email.com",
+    "country": "USA",
+    "signup_date": "2023-06-26",
+    "total_orders": 36,
+    "lifetime_value": 641.25,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 67,
+    "name": "Customer 67",
+    "email": "customer67@email.com",
+    "country": "Germany",
+    "signup_date": "2023-06-23",
+    "total_orders": 19,
+    "lifetime_value": 1870.05,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 68,
+    "name": "Customer 68",
+    "email": "customer68@email.com",
+    "country": "UK",
+    "signup_date": "2023-09-09",
+    "total_orders": 46,
+    "lifetime_value": 659.76,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 69,
+    "name": "Customer 69",
+    "email": "customer69@email.com",
+    "country": "France",
+    "signup_date": "2023-06-26",
+    "total_orders": 12,
+    "lifetime_value": 2154.14,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 70,
+    "name": "Customer 70",
+    "email": "customer70@email.com",
+    "country": "Canada",
+    "signup_date": "2023-02-05",
+    "total_orders": 49,
+    "lifetime_value": 4250.58,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 71,
+    "name": "Customer 71",
+    "email": "customer71@email.com",
+    "country": "USA",
+    "signup_date": "2023-10-10",
+    "total_orders": 47,
+    "lifetime_value": 3509.91,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 72,
+    "name": "Customer 72",
+    "email": "customer72@email.com",
+    "country": "UK",
+    "signup_date": "2023-05-18",
+    "total_orders": 22,
+    "lifetime_value": 661.0,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 73,
+    "name": "Customer 73",
+    "email": "customer73@email.com",
+    "country": "Australia",
+    "signup_date": "2023-12-10",
+    "total_orders": 8,
+    "lifetime_value": 2303.51,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 74,
+    "name": "Customer 74",
+    "email": "customer74@email.com",
+    "country": "Germany",
+    "signup_date": "2023-04-26",
+    "total_orders": 49,
+    "lifetime_value": 3744.03,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 75,
+    "name": "Customer 75",
+    "email": "customer75@email.com",
+    "country": "UK",
+    "signup_date": "2023-06-26",
+    "total_orders": 49,
+    "lifetime_value": 927.37,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 76,
+    "name": "Customer 76",
+    "email": "customer76@email.com",
+    "country": "Australia",
+    "signup_date": "2023-02-28",
+    "total_orders": 14,
+    "lifetime_value": 131.63,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 77,
+    "name": "Customer 77",
+    "email": "customer77@email.com",
+    "country": "Canada",
+    "signup_date": "2023-05-14",
+    "total_orders": 18,
+    "lifetime_value": 125.15,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 78,
+    "name": "Customer 78",
+    "email": "customer78@email.com",
+    "country": "Canada",
+    "signup_date": "2023-12-14",
+    "total_orders": 37,
+    "lifetime_value": 1891.2,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 79,
+    "name": "Customer 79",
+    "email": "customer79@email.com",
+    "country": "France",
+    "signup_date": "2023-09-09",
+    "total_orders": 12,
+    "lifetime_value": 4097.64,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 80,
+    "name": "Customer 80",
+    "email": "customer80@email.com",
+    "country": "Australia",
+    "signup_date": "2023-06-21",
+    "total_orders": 21,
+    "lifetime_value": 4004.73,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 81,
+    "name": "Customer 81",
+    "email": "customer81@email.com",
+    "country": "UK",
+    "signup_date": "2023-12-16",
+    "total_orders": 44,
+    "lifetime_value": 384.37,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 82,
+    "name": "Customer 82",
+    "email": "customer82@email.com",
+    "country": "UK",
+    "signup_date": "2023-03-13",
+    "total_orders": 10,
+    "lifetime_value": 1912.42,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 83,
+    "name": "Customer 83",
+    "email": "customer83@email.com",
+    "country": "Germany",
+    "signup_date": "2023-10-03",
+    "total_orders": 31,
+    "lifetime_value": 861.37,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 84,
+    "name": "Customer 84",
+    "email": "customer84@email.com",
+    "country": "France",
+    "signup_date": "2023-06-13",
+    "total_orders": 40,
+    "lifetime_value": 1196.3,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 85,
+    "name": "Customer 85",
+    "email": "customer85@email.com",
+    "country": "Canada",
+    "signup_date": "2023-10-27",
+    "total_orders": 15,
+    "lifetime_value": 2196.65,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 86,
+    "name": "Customer 86",
+    "email": "customer86@email.com",
+    "country": "France",
+    "signup_date": "2023-07-28",
+    "total_orders": 10,
+    "lifetime_value": 4133.77,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 87,
+    "name": "Customer 87",
+    "email": "customer87@email.com",
+    "country": "Australia",
+    "signup_date": "2023-05-24",
+    "total_orders": 1,
+    "lifetime_value": 1308.12,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 88,
+    "name": "Customer 88",
+    "email": "customer88@email.com",
+    "country": "Australia",
+    "signup_date": "2023-03-20",
+    "total_orders": 24,
+    "lifetime_value": 1550.46,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 89,
+    "name": "Customer 89",
+    "email": "customer89@email.com",
+    "country": "UK",
+    "signup_date": "2023-03-14",
+    "total_orders": 33,
+    "lifetime_value": 4353.74,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 90,
+    "name": "Customer 90",
+    "email": "customer90@email.com",
+    "country": "Australia",
+    "signup_date": "2023-09-11",
+    "total_orders": 30,
+    "lifetime_value": 4219.69,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 91,
+    "name": "Customer 91",
+    "email": "customer91@email.com",
+    "country": "Australia",
+    "signup_date": "2023-10-11",
+    "total_orders": 43,
+    "lifetime_value": 1853.41,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 92,
+    "name": "Customer 92",
+    "email": "customer92@email.com",
+    "country": "France",
+    "signup_date": "2023-05-01",
+    "total_orders": 1,
+    "lifetime_value": 92.13,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 93,
+    "name": "Customer 93",
+    "email": "customer93@email.com",
+    "country": "UK",
+    "signup_date": "2023-11-24",
+    "total_orders": 29,
+    "lifetime_value": 2026.04,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 94,
+    "name": "Customer 94",
+    "email": "customer94@email.com",
+    "country": "UK",
+    "signup_date": "2023-09-09",
+    "total_orders": 6,
+    "lifetime_value": 763.98,
+    "tier": "Platinum"
+  },
+  {
+    "customer_id": 95,
+    "name": "Customer 95",
+    "email": "customer95@email.com",
+    "country": "UK",
+    "signup_date": "2023-01-13",
+    "total_orders": 11,
+    "lifetime_value": 668.77,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 96,
+    "name": "Customer 96",
+    "email": "customer96@email.com",
+    "country": "Germany",
+    "signup_date": "2023-08-08",
+    "total_orders": 7,
+    "lifetime_value": 2229.1,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 97,
+    "name": "Customer 97",
+    "email": "customer97@email.com",
+    "country": "France",
+    "signup_date": "2023-03-17",
+    "total_orders": 14,
+    "lifetime_value": 1453.67,
+    "tier": "Bronze"
+  },
+  {
+    "customer_id": 98,
+    "name": "Customer 98",
+    "email": "customer98@email.com",
+    "country": "France",
+    "signup_date": "2023-08-27",
+    "total_orders": 42,
+    "lifetime_value": 1603.78,
+    "tier": "Silver"
+  },
+  {
+    "customer_id": 99,
+    "name": "Customer 99",
+    "email": "customer99@email.com",
+    "country": "UK",
+    "signup_date": "2023-05-19",
+    "total_orders": 27,
+    "lifetime_value": 4149.46,
+    "tier": "Gold"
+  },
+  {
+    "customer_id": 100,
+    "name": "Customer 100",
+    "email": "customer100@email.com",
+    "country": "Australia",
+    "signup_date": "2023-11-13",
+    "total_orders": 33,
+    "lifetime_value": 4353.93,
+    "tier": "Platinum"
+  }
+]

@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
-import time, sys, os
+import time, sys, os, io
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils.db import get_connection, init_db
 from utils.sql_validator import validate_sql, extract_sql_from_response
@@ -206,3 +207,71 @@ async def clear_history():
         return {"message": "History cleared."}
     finally:
         conn.close()
+
+class ExportRequest(BaseModel):
+    sql: str
+    table_name: str
+    filename: Optional[str] = "prism_export"
+    format: Optional[str] = "xlsx"  # xlsx or csv
+
+@router.post("/query/export")
+async def export_results(req: ExportRequest):
+    import pandas as pd
+
+    valid, reason = validate_sql(req.sql)
+    if not valid:
+        raise HTTPException(status_code=400, detail=f"SQL validation failed: {reason}")
+
+    conn = get_connection()
+    try:
+        df = pd.read_sql_query(req.sql, conn)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Query error: {str(e)}")
+    finally:
+        conn.close()
+
+    filename = req.filename.strip() or "prism_export"
+
+    if req.format == "csv":
+        output = io.StringIO()
+        df.to_csv(output, index=False)
+        output.seek(0)
+        return StreamingResponse(
+            io.BytesIO(output.getvalue().encode()),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+        )
+    else:
+        # Excel export
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False, sheet_name='Results')
+            workbook  = writer.book
+            worksheet = writer.sheets['Results']
+
+            # Style the header row
+            header_fmt = workbook.add_format({
+                'bold': True,
+                'bg_color': '#1c2030',
+                'font_color': '#4ade80',
+                'border': 1,
+                'border_color': '#2a2e42'
+            })
+            data_fmt = workbook.add_format({
+                'border': 1,
+                'border_color': '#2a2e42'
+            })
+
+            # Apply header format
+            for col_num, col_name in enumerate(df.columns):
+                worksheet.write(0, col_num, col_name, header_fmt)
+                # Auto-fit column width
+                col_width = max(len(str(col_name)), df[col_name].astype(str).str.len().max())
+                worksheet.set_column(col_num, col_num, min(col_width + 4, 40))
+
+        output.seek(0)
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}.xlsx"}
+        )

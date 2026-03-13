@@ -1068,6 +1068,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             <button class="rtab active" onclick="switchResultTab('table')">Table</button>
             <button class="rtab" onclick="switchResultTab('chart')">Chart</button>
             <button class="rtab" onclick="switchResultTab('sql')">SQL</button>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:6px;padding:0 8px">
+              <button class="btn btn-ghost btn-sm" onclick="exportResults('csv')" id="export-csv-btn" style="display:none">↓ CSV</button>
+              <button class="btn btn-blue btn-sm" onclick="exportResults('xlsx')" id="export-xlsx-btn" style="display:none">↓ Excel</button>
+            </div>
           </div>
           <div class="results-content" id="results-content">
             <div class="empty-state">
@@ -1426,10 +1430,12 @@ async function runQuery() {
 function renderResults(data) {
   document.getElementById('results-tabs').style.display = 'flex';
   document.getElementById('save-query-btn').disabled = false;
-  
+  document.getElementById('export-csv-btn').style.display = 'inline-flex';
+  document.getElementById('export-xlsx-btn').style.display = 'inline-flex';
+
   // Set up chart controls first
   setupChart(data);
-  
+
   // Show table by default
   switchResultTab('table');
 }
@@ -1555,10 +1561,60 @@ function copySQL() {
   if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 2000); }
 }
 
+async function exportResults(format) {
+  if (!currentSQL || !currentTable) return;
+
+  const btn = format === 'xlsx'
+    ? document.getElementById('export-xlsx-btn')
+    : document.getElementById('export-csv-btn');
+  
+  const original = btn.textContent;
+  btn.textContent = '...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API}/query/export`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sql: currentSQL,
+        table_name: currentTable,
+        filename: `prism_${currentTable}_${new Date().toISOString().split('T')[0]}`,
+        format: format
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Export failed');
+    }
+
+    // Trigger browser download
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `prism_${currentTable}_${new Date().toISOString().split('T')[0]}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    btn.textContent = '✓ Done';
+    setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 2000);
+  } catch(e) {
+    alert('Export failed: ' + e.message);
+    btn.textContent = original;
+    btn.disabled = false;
+  }
+}
+
 function clearQuery() {
   document.getElementById('query-input').value = '';
   document.getElementById('results-tabs').style.display = 'none';
   document.getElementById('query-error').style.display = 'none';
+  document.getElementById('export-csv-btn').style.display = 'none';
+  document.getElementById('export-xlsx-btn').style.display = 'none';
   document.getElementById('results-content').innerHTML = '<div class="empty-state"><div class="empty-icon">⚡</div><div class="empty-text">Run a query to see results</div></div>';
   currentResult = null; currentSQL = '';
   document.getElementById('save-query-btn').disabled = true;

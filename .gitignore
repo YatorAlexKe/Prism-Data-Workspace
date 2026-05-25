@@ -1,7 +1,31 @@
+# Python
 __pycache__/
 *.pyc
-*.db
-.env
+*.pyo
 venv/
 *.egg-info/
+
+# Database
+*.db
+*.sqlite
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Google Credentials (NEVER commit these)
+credentials/
+*.json
+service_account*.json
+client_secret*.json
+token.json
+token.pickle
+google_credentials.json
+
+# OS
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json

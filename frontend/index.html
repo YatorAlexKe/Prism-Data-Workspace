@@ -1548,9 +1548,27 @@ function drawChart(type, xCol, yCol) {
   Plotly.newPlot('chart-div', [trace], layout, { responsive: true, displayModeBar: false });
 }
 
+function formatSQL(sql) {
+  const keywords = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 
+                    'HAVING', 'LIMIT', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN',
+                    'JOIN', 'ON', 'UNION', 'WITH'];
+  let formatted = sql.trim();
+  keywords.forEach(kw => {
+    formatted = formatted.replace(new RegExp(`\\s+${kw}\\b`, 'gi'), `\n${kw}`);
+  });
+  // Indent SELECT columns
+  formatted = formatted.replace(/SELECT\s+/i, 'SELECT\n  ');
+  formatted = formatted.replace(/,\s*/g, ',\n  ');
+  return formatted.trim();
+}
+
 function highlightSQL(sql) {
-  const kws = ['SELECT','FROM','WHERE','GROUP BY','ORDER BY','LIMIT','HAVING','JOIN','LEFT JOIN','INNER JOIN','ON','AS','AND','OR','NOT','IN','LIKE','IS','NULL','DISTINCT','CASE','WHEN','THEN','ELSE','END','ASC','DESC','WITH','UNION','COUNT','SUM','AVG','MIN','MAX'];
-  let r = sql;
+  const formatted = formatSQL(sql);
+  const kws = ['SELECT','FROM','WHERE','GROUP BY','ORDER BY','LIMIT','HAVING',
+    'JOIN','LEFT JOIN','RIGHT JOIN','INNER JOIN','ON','AS','AND','OR','NOT',
+    'IN','LIKE','IS','NULL','DISTINCT','CASE','WHEN','THEN','ELSE','END',
+    'ASC','DESC','WITH','UNION','COUNT','SUM','AVG','MIN','MAX'];
+  let r = formatted;
   kws.forEach(k => { r = r.replace(new RegExp(`\\b${k}\\b`, 'gi'), m => `<span class="kw">${m}</span>`); });
   return r;
 }

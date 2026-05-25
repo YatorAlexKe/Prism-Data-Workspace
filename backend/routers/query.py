@@ -61,6 +61,24 @@ async def natural_language_query(req: QueryRequest):
         schema_cols = get_table_schema(conn, req.table_name)
         if not schema_cols:
             raise HTTPException(status_code=404, detail="Table not found.")
+
+        # Handle schema/metadata questions directly without SQL
+        schema_keywords = ['column', 'columns', 'fields', 'schema', 'structure', 
+                        'what is in', 'what data', 'describe', 'available']
+        q_lower = req.question.lower()
+        if any(kw in q_lower for kw in schema_keywords):
+            col_list = ', '.join([f"{c['name']} ({c['type']})" for c in schema_cols])
+            return {
+                "question": req.question,
+                "sql": f"PRAGMA table_info({req.table_name});",
+                "schema": build_schema_context(req.table_name, schema_cols),
+                "result": {
+                    "columns": [{"name": "column_name", "type": "text"}, {"name": "data_type", "type": "text"}],
+                    "rows": [{"column_name": c['name'], "data_type": c['type']} for c in schema_cols],
+                    "row_count": len(schema_cols)
+                },
+                "chart_suggestion": {"chart_type": "bar", "x_column": "column_name", "y_column": "data_type", "reason": "Schema overview"}
+            }
         
         schema_context = build_schema_context(req.table_name, schema_cols)
         prompt_text = build_prompt(schema_context, req.question)

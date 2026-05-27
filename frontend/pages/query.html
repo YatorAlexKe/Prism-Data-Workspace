@@ -1,0 +1,61 @@
+<div class="query-layout">
+  <!-- Query Sidebar -->
+  <div class="query-sidebar">
+    <div class="qs-header">Tables</div>
+    <div class="table-selector" id="table-selector">
+      <div style="font-size:11px;color:var(--muted);padding:8px;font-family:var(--mono)">No tables loaded</div>
+    </div>
+    <div class="qs-header" style="border-top:1px solid var(--border)">Schema</div>
+    <div class="schema-panel" id="schema-panel">
+      <div style="font-size:11px;color:var(--muted);font-family:var(--mono);padding:8px">Select a table</div>
+    </div>
+    <div style="padding:10px;border-top:1px solid var(--border)">
+      <button class="btn btn-blue btn-sm" style="width:100%" onclick="detectJoins()">🔗 Detect JOINs</button>
+    </div>
+  </div>
+
+  <!-- Query Main -->
+  <div class="query-main">
+    <div class="query-input-area">
+      <textarea id="query-input" placeholder="Ask a question in plain English... (Ctrl+Enter to run)"
+        rows="2"></textarea>
+      <div id="query-loading" style="display:none;margin:6px 0">
+        <div class="loading-strip"></div>
+      </div>
+      <div class="query-actions">
+        <button class="btn btn-primary" id="run-query-btn" onclick="runQuery()" disabled>⚡ Run Query</button>
+        <button class="btn btn-ghost" onclick="clearQuery()">Clear</button>
+        <button class="btn btn-ghost" onclick="toggleTemplates()">Templates</button>
+        <div class="save-query-btn">
+          <button class="btn btn-ghost" id="save-query-btn" onclick="openSaveModal()" disabled>+ Save</button>
+        </div>
+      </div>
+      <div id="templates-panel"
+        style="display:none;margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <div id="templates-list"></div>
+      </div>
+      <div id="join-suggestions" style="display:none;margin-top:10px"></div>
+      <div id="query-error" style="display:none;margin-top:10px"></div>
+    </div>
+
+    <div class="results-area">
+      <div class="results-tabs" id="results-tabs" style="display:none">
+        <button class="rtab active" onclick="switchResultTab('table')">Table</button>
+        <button class="rtab" onclick="switchResultTab('chart')">Chart</button>
+        <button class="rtab" onclick="switchResultTab('sql')">SQL</button>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:6px;padding:0 8px">
+          <button class="btn btn-ghost btn-sm" onclick="exportResults('csv')" id="export-csv-btn"
+            style="display:none">↓ CSV</button>
+          <button class="btn btn-blue btn-sm" onclick="exportResults('xlsx')" id="export-xlsx-btn"
+            style="display:none">↓ Excel</button>
+        </div>
+      </div>
+      <div class="results-content" id="results-content">
+        <div class="empty-state">
+          <div class="empty-icon">⚡</div>
+          <div class="empty-text">Run a query to see results</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

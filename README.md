@@ -21,7 +21,11 @@ pip install -r requirements.txt
 ollama pull llama3.2
 
 # Run server
-uvicorn main:app --reload --port 8000
+# Windows
+venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
+
+# Mac/Linux
+venv/bin/python -m uvicorn main:app --reload --port 8000
 ```
 
 Open **http://localhost:8000**

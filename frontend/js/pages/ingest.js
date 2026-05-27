@@ -99,3 +99,42 @@ function initIngestPage() {
 }
 
 registerPageInit('ingest', initIngestPage);
+
+async function handleGSheetImport() {
+  const url = document.getElementById('gsheet-url').value.trim();
+  const tab = document.getElementById('gsheet-tab').value.trim() || null;
+  if (!url) { alert('Please enter a Google Sheets URL.'); return; }
+
+  showProgress('Importing from Google Sheets...');
+  try {
+    const res = await fetch(`${API}/sheets/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, sheet_name: tab })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Import failed');
+    showUploadResult(data);
+    if (typeof refreshDatasets === 'function') refreshDatasets();
+  } catch(e) { showUploadError(e.message); }
+  hideProgress();
+}
+
+async function getServiceAccountEmail() {
+  try {
+    const res = await fetch(`${API}/sheets/service-account-email`);
+    const data = await res.json();
+    const el = document.getElementById('gsheet-email');
+    el.style.display = 'block';
+    el.innerHTML = `
+      <div style="color:var(--muted);margin-bottom:4px">Share your Google Sheet with this email:</div>
+      <div style="color:var(--green);font-weight:600">${data.email}</div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px" 
+        onclick="navigator.clipboard.writeText('${data.email}');this.textContent='Copied!'">
+        Copy Email
+      </button>
+    `;
+  } catch(e) {
+    alert('Could not load service account email: ' + e.message);
+  }
+}

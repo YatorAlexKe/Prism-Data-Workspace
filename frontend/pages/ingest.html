@@ -15,15 +15,35 @@
     </div>
   </div>
 
-  <div id="ingest-url-panel" style="display:none">
+<div id="ingest-url-panel" style="display:none">
+  <div style="margin-bottom:16px">
+    <div class="config-label" style="margin-bottom:6px">Import from URL</div>
     <div class="url-input-row">
-      <input type="url" id="url-input" placeholder="https://... or Google Sheets share link" style="font-size:13px">
+      <input type="url" id="url-input" placeholder="https://... public CSV or JSON URL" style="font-size:13px">
       <button class="btn btn-primary" onclick="handleUrlIngest()">Import</button>
     </div>
     <div style="margin-top:8px;font-size:11px;color:var(--muted)">
-      Google Sheets: File → Share → Copy link, then paste above
+      For public URLs only. Use the section below for private Google Sheets.
     </div>
   </div>
+
+  <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px">
+    <div class="config-label" style="margin-bottom:10px">Import from Google Sheets (Private)</div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Google Sheets URL</div>
+      <input type="url" id="gsheet-url" placeholder="https://docs.google.com/spreadsheets/d/..." style="width:100%;font-size:12px">
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Sheet Tab (optional)</div>
+      <input type="text" id="gsheet-tab" placeholder="Sheet1" style="width:100%;font-size:12px">
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="handleGSheetImport()">Import from Google Sheets</button>
+      <button class="btn btn-ghost btn-sm" onclick="getServiceAccountEmail()">View Service Account Email</button>
+    </div>
+    <div id="gsheet-email" style="display:none;margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:12px"></div>
+  </div>
+</div>
 
   <div class="upload-progress" id="upload-progress">
     <div class="progress-bar"></div>

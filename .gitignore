@@ -29,3 +29,6 @@ Thumbs.db
 
 # IDE
 .vscode/settings.json
+
+# Local-only documentation (summaries, generators) — not for the repo
+Documentation/

@@ -4,6 +4,7 @@
   <div class="ingest-tabs">
     <button class="itab active" onclick="switchIngestTab('file')">File Upload</button>
     <button class="itab" onclick="switchIngestTab('url')">URL / Google Sheets</button>
+    <button class="itab" onclick="switchIngestTab('image')">Image (OCR)</button>
   </div>
 
   <div id="ingest-file-panel">
@@ -44,6 +45,38 @@
     <div id="gsheet-email" style="display:none;margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:12px"></div>
   </div>
 </div>
+
+  <div id="ingest-image-panel" style="display:none">
+    <div class="ingest-zone" id="ingest-image-zone">
+      <input type="file" id="image-input" accept="image/png,image/jpeg,image/bmp,image/tiff,image/webp" onchange="handleImageSelect(event)">
+      <div class="ingest-icon">🖼</div>
+      <div class="ingest-label">Drop an image of a table or click to browse</div>
+      <div class="ingest-sub" style="margin-top:6px">Supports PNG · JPG · BMP · TIFF · WebP</div>
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:11px;font-family:var(--mono);color:var(--muted)">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" id="image-has-header" checked>
+        First row is header
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer" title="Only enable for borderless tables. For ruled tables (visible grid lines) this option splits wrapped cell content across multiple rows.">
+        <input type="checkbox" id="image-implicit-rows">
+        Detect implicit rows
+      </label>
+      <label style="display:flex;align-items:center;gap:6px">
+        Min confidence
+        <input type="number" id="image-min-confidence" value="25" min="0" max="100" style="width:55px" title="Cells below this OCR confidence (0-100) are dropped. Lower → captures more cells with more noise.">
+      </label>
+      <label style="display:flex;align-items:center;gap:6px">
+        Language
+        <input type="text" id="image-lang" value="eng" placeholder="eng" style="width:80px" title="Tesseract language code, e.g. eng, fra, deu, eng+fra (requires matching language pack installed)">
+      </label>
+    </div>
+
+    <div style="margin-top:10px;font-size:11px;color:var(--muted)">
+      Image is grayscaled, contrast-stretched, and upscaled before scanning. Lower the confidence threshold to capture more cells (at the cost of more noise). Uncheck "First row is header" if your table has no header row. Enable "Detect implicit rows" only for tables without visible row borders.
+    </div>
+  </div>
 
   <div class="upload-progress" id="upload-progress">
     <div class="progress-bar"></div>

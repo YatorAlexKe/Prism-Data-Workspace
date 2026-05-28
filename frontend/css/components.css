@@ -177,6 +177,11 @@ textarea::placeholder {
   color: var(--orange);
 }
 
+.fmt-image {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--red);
+}
+
 /* ── COLUMN TYPE CHIPS ── */
 .schema-col-type {
   font-family: var(--mono);

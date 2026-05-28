@@ -1,11 +1,46 @@
 function switchIngestTab(tab) {
-  document.querySelectorAll('.itab').forEach((t, i) => t.classList.toggle('active', ['file', 'url'][i] === tab));
+  const tabs = ['file', 'url', 'image'];
+  document.querySelectorAll('.itab').forEach((t, i) => t.classList.toggle('active', tabs[i] === tab));
   document.getElementById('ingest-file-panel').style.display = tab === 'file' ? 'block' : 'none';
   document.getElementById('ingest-url-panel').style.display = tab === 'url' ? 'block' : 'none';
+  document.getElementById('ingest-image-panel').style.display = tab === 'image' ? 'block' : 'none';
 }
 
 function handleFileSelect(e) {
   if (e.target.files[0]) processFile(e.target.files[0]);
+}
+
+function handleImageSelect(e) {
+  if (e.target.files[0]) processImage(e.target.files[0]);
+}
+
+async function processImage(file) {
+  showProgress('Scanning ' + file.name + ' for tables...');
+  const fd = new FormData();
+  fd.append('file', file);
+
+  const hasHeaderEl = document.getElementById('image-has-header');
+  const implicitRowsEl = document.getElementById('image-implicit-rows');
+  const minConfEl = document.getElementById('image-min-confidence');
+  const langEl = document.getElementById('image-lang');
+  if (hasHeaderEl) fd.append('has_header', hasHeaderEl.checked ? 'true' : 'false');
+  if (implicitRowsEl) fd.append('implicit_rows', implicitRowsEl.checked ? 'true' : 'false');
+  if (minConfEl && minConfEl.value !== '') fd.append('min_confidence', minConfEl.value);
+  if (langEl && langEl.value.trim()) fd.append('lang', langEl.value.trim());
+
+  try {
+    const res = await fetch(`${API}/ingest/image`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Image scan failed');
+    showUploadResult(data);
+    if (data.tables_found > 1) {
+      const el = document.getElementById('upload-result');
+      el.insertAdjacentHTML('beforeend',
+        `<div style="margin-top:10px;font-size:12px;color:var(--yellow)">⚠ Found ${data.tables_found} tables in this image; showing table ${data.table_index + 1}.</div>`);
+    }
+    refreshDatasets();
+  } catch (e) { showUploadError(e.message); }
+  hideProgress();
 }
 
 async function processFile(file) {
@@ -80,22 +115,27 @@ function showUploadError(msg) {
   el.innerHTML = `<div class="error-box">⚠ ${msg}</div>`;
 }
 
-// Drag-and-drop must be re-bound every time the ingest fragment is mounted
+function bindDropZone(id, processor) {
+  const zone = document.getElementById(id);
+  if (!zone || zone.dataset.bound) return;
+  zone.dataset.bound = '1';
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.classList.add('drag');
+  });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag');
+    if (e.dataTransfer.files[0]) processor(e.dataTransfer.files[0]);
+  });
+}
+
+// Drop zones must be re-bound every time the ingest fragment is mounted
 // (the elements are recreated on innerHTML injection).
 function initIngestPage() {
-  const ingestZone = document.getElementById('ingest-zone');
-  if (!ingestZone || ingestZone.dataset.bound) return;
-  ingestZone.dataset.bound = '1';
-  ingestZone.addEventListener('dragover', e => {
-    e.preventDefault();
-    ingestZone.classList.add('drag');
-  });
-  ingestZone.addEventListener('dragleave', () => ingestZone.classList.remove('drag'));
-  ingestZone.addEventListener('drop', e => {
-    e.preventDefault();
-    ingestZone.classList.remove('drag');
-    if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
-  });
+  bindDropZone('ingest-zone', processFile);
+  bindDropZone('ingest-image-zone', processImage);
 }
 
 registerPageInit('ingest', initIngestPage);

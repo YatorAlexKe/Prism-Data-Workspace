@@ -34,6 +34,7 @@ async function loadDashboard() {
           <div class="dataset-card-actions">
             <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();goQueryWith('${d.table_name}')">Query</button>
             <button class="btn btn-blue btn-sm" onclick="event.stopPropagation();goProfileWith('${d.table_name}')">Profile</button>
+            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openEditDataset('${d.table_name}')">✎ Edit</button>
           </div>
         </div>`;
       }).join('')

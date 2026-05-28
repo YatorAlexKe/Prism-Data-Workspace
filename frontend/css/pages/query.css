@@ -65,6 +65,20 @@
   margin-left: auto;
 }
 
+.table-chip-edit {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 0 4px;
+  border-radius: 3px;
+  margin-left: 4px;
+  transition: all 0.1s;
+}
+
+.table-chip-edit:hover {
+  color: var(--green);
+  background: rgba(74, 222, 128, 0.1);
+}
+
 .schema-panel {
   flex: 1;
   overflow-y: auto;

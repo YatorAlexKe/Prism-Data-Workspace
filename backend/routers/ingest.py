@@ -100,6 +100,8 @@ async def ingest_image(
     has_header: bool = Form(True),
     lang: str = Form('eng'),
     implicit_rows: bool = Form(False),
+    isolate_table: bool = Form(True),
+    unwrap_lines: bool = Form(True),
 ):
     init_db()
     filename = file.filename or 'image'
@@ -117,6 +119,8 @@ async def ingest_image(
             lang=lang,
             has_header=has_header,
             implicit_rows=implicit_rows,
+            isolate_table=isolate_table,
+            unwrap_lines=unwrap_lines,
         )
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))

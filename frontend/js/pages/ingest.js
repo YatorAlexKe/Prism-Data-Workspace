@@ -19,12 +19,16 @@ async function processImage(file) {
   const fd = new FormData();
   fd.append('file', file);
 
+  const isolateTableEl = document.getElementById('image-isolate-table');
   const hasHeaderEl = document.getElementById('image-has-header');
   const implicitRowsEl = document.getElementById('image-implicit-rows');
+  const unwrapLinesEl = document.getElementById('image-unwrap-lines');
   const minConfEl = document.getElementById('image-min-confidence');
   const langEl = document.getElementById('image-lang');
+  if (isolateTableEl) fd.append('isolate_table', isolateTableEl.checked ? 'true' : 'false');
   if (hasHeaderEl) fd.append('has_header', hasHeaderEl.checked ? 'true' : 'false');
   if (implicitRowsEl) fd.append('implicit_rows', implicitRowsEl.checked ? 'true' : 'false');
+  if (unwrapLinesEl) fd.append('unwrap_lines', unwrapLinesEl.checked ? 'true' : 'false');
   if (minConfEl && minConfEl.value !== '') fd.append('min_confidence', minConfEl.value);
   if (langEl && langEl.value.trim()) fd.append('lang', langEl.value.trim());
 

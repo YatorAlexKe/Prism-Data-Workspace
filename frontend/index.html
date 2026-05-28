@@ -133,6 +133,21 @@
     </div>
   </div>
 
+  <!-- EDIT DATASET MODAL -->
+  <div class="modal-overlay" id="edit-dataset-modal">
+    <div class="modal modal-wide">
+      <div class="modal-title" id="edit-dataset-title">Edit Dataset</div>
+      <div class="edit-row-actions" id="edit-dataset-meta"></div>
+      <div class="edit-table-wrap" id="edit-dataset-table">
+        <div class="empty-state" style="min-height:120px"><div class="empty-icon">⟳</div><div class="empty-text">Loading...</div></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeEditDatasetModal()">Cancel</button>
+        <button class="btn btn-primary" id="edit-dataset-save-btn" onclick="saveEditedDataset()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Load order matters: config → state → utilities → navigation → page modules → init -->
   <script src="/static/js/config.js"></script>
   <script src="/static/js/state.js"></script>

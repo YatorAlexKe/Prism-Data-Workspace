@@ -20,6 +20,8 @@ function renderTableSelector() {
       <span style="font-family:var(--mono);font-size:11px">${d.table_name}</span>
       <span style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto">${d.row_count}r</span>
       ${selectedTables.includes(d.table_name) ? '<span class="table-chip-check">✓</span>' : ''}
+      <span class="table-chip-edit" title="Edit dataset"
+            onclick="event.stopPropagation();openEditDataset('${d.table_name}')">✎</span>
     </div>
   `).join('');
 }

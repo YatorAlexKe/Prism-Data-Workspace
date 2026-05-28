@@ -55,6 +55,10 @@
     </div>
 
     <div style="margin-top:12px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:11px;font-family:var(--mono);color:var(--muted)">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer" title="Auto-detect the table's bounding box and crop to it before OCR. Strips surrounding paragraph text. Disable for borderless tables (no rules to detect).">
+        <input type="checkbox" id="image-isolate-table" checked>
+        Isolate table region
+      </label>
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
         <input type="checkbox" id="image-has-header" checked>
         First row is header
@@ -62,6 +66,10 @@
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer" title="Only enable for borderless tables. For ruled tables (visible grid lines) this option splits wrapped cell content across multiple rows.">
         <input type="checkbox" id="image-implicit-rows">
         Detect implicit rows
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer" title="Glue short lowercase fragments onto the preceding word so 'Manchest er' → 'Manchester' and 'Departme nt' → 'Department'. Disable if your data contains legitimate short-word phrases like 'yes no'.">
+        <input type="checkbox" id="image-unwrap-lines" checked>
+        Heal wrapped text
       </label>
       <label style="display:flex;align-items:center;gap:6px">
         Min confidence
@@ -74,7 +82,7 @@
     </div>
 
     <div style="margin-top:10px;font-size:11px;color:var(--muted)">
-      Image is grayscaled, contrast-stretched, and upscaled before scanning. Lower the confidence threshold to capture more cells (at the cost of more noise). Uncheck "First row is header" if your table has no header row. Enable "Detect implicit rows" only for tables without visible row borders.
+      "Isolate table region" crops away surrounding text/paragraphs so they don't pollute the scan — turn off for borderless tables. Image is then grayscaled, contrast-stretched, and upscaled before OCR. Lower the confidence threshold to capture more cells (at the cost of more noise). Enable "Detect implicit rows" only for tables without visible row borders.
     </div>
   </div>
 

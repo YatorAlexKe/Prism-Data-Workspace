@@ -68,6 +68,9 @@
   transition: all 0.15s;
   border-radius: 0;
   position: relative;
+  /* React Router renders NavLink as <a>; strip the default underline so the
+     sidebar matches the original vanilla design that used <div onclick=...>. */
+  text-decoration: none;
 }
 
 .nav-item:hover {

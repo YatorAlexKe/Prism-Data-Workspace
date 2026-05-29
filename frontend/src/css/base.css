@@ -41,6 +41,14 @@ body {
   height: 100vh;
 }
 
+/* React mounts everything inside <div id="root">. Use display:contents so
+   #root disappears from the layout tree — the sidebar and .main below it
+   become direct flex children of <body>, matching the original HTML
+   structure that the rest of the CSS was written against. */
+#root {
+  display: contents;
+}
+
 @keyframes shimmer {
   0% {
     background-position: 0% 0%;

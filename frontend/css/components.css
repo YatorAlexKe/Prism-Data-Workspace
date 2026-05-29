@@ -1,0 +1,591 @@
+/* ── FORM INPUTS ── */
+select,
+input[type="text"],
+input[type="password"],
+input[type="url"] {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 5px 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+select:focus,
+input:focus {
+  border-color: var(--green);
+}
+
+select option {
+  background: var(--surface2);
+}
+
+textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--text);
+  resize: none;
+  outline: none;
+  transition: border-color 0.15s;
+  min-height: 64px;
+}
+
+textarea:focus {
+  border-color: var(--green);
+}
+
+textarea::placeholder {
+  color: var(--muted);
+}
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--green);
+  color: #000;
+}
+
+.btn-primary:hover {
+  background: #6ee7a0;
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.btn-ghost:hover {
+  color: var(--text);
+  border-color: var(--border2);
+}
+
+.btn-blue {
+  background: rgba(96, 165, 250, 0.15);
+  color: var(--blue);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+.btn-blue:hover {
+  background: rgba(96, 165, 250, 0.25);
+}
+
+.btn-red {
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--red);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+.btn-red:hover {
+  background: rgba(248, 113, 113, 0.2);
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+/* ── LOADING ── */
+.loading-strip {
+  height: 2px;
+  background: linear-gradient(90deg, var(--green), var(--blue), var(--purple));
+  background-size: 200% 100%;
+  animation: shimmer 1s linear infinite;
+}
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── QUALITY BAR ── */
+.quality-bar {
+  height: 3px;
+  background: var(--surface3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.quality-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s;
+}
+
+/* ── FORMAT BADGES ── */
+.format-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.fmt-csv {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--green);
+}
+
+.fmt-xlsx {
+  background: rgba(96, 165, 250, 0.15);
+  color: var(--blue);
+}
+
+.fmt-json {
+  background: rgba(167, 139, 250, 0.15);
+  color: var(--purple);
+}
+
+.fmt-url {
+  background: rgba(251, 146, 60, 0.15);
+  color: var(--orange);
+}
+
+.fmt-image {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--red);
+}
+
+/* ── COLUMN TYPE CHIPS ── */
+.schema-col-type {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.ct-text {
+  background: rgba(96, 165, 250, 0.15);
+  color: var(--blue);
+}
+
+.ct-integer {
+  background: rgba(251, 146, 60, 0.15);
+  color: var(--orange);
+}
+
+.ct-float {
+  background: rgba(167, 139, 250, 0.15);
+  color: var(--purple);
+}
+
+.ct-datetime {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--green);
+}
+
+/* ── ERROR ── */
+.error-box {
+  background: rgba(248, 113, 113, 0.06);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--red);
+  line-height: 1.6;
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  color: var(--muted);
+  gap: 8px;
+}
+
+.empty-icon {
+  font-size: 36px;
+  opacity: 0.3;
+}
+
+.empty-text {
+  font-size: 13px;
+}
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 480px;
+  max-width: 90vw;
+}
+
+/* Fixed-size big modal: 85% of the viewport. overflow:hidden on the modal
+ * itself is the guarantee that nothing inside can visually escape its
+ * rounded-rectangle border — even if some inner flex layout misbehaves,
+ * the modal box clips it. The table inside then has a real, knowable
+ * container to fit/scroll within. */
+.modal-wide {
+  width: 85vw;
+  max-width: 1400px;
+  height: 85vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* The wrap fills the remaining modal height and any horizontal space.
+ *
+ * `min-width: 0` and `min-height: 0` are essential: flex children default to
+ * `min-*: auto` which equals their intrinsic content size, so without these
+ * the wrap would refuse to shrink below the table's natural width/height and
+ * its overflow:auto would silently never trigger. With them, the wrap is
+ * exactly the modal's content area and overflow handles the rest. */
+.edit-table-wrap {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+
+/* No forced width on the table — auto layout. The inputs inside have
+ * min-width so columns stay readable. Small tables fill the wrap; wide
+ * tables overflow it and trigger its horizontal scrollbar inside the modal.
+ * `border-collapse: separate` is needed so per-cell box-shadows on focus
+ * render cleanly without being clipped by neighboring cells' borders. */
+.edit-table-wrap table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+
+/* Cells form a full grid: every cell gets a right + bottom border, and the
+ * last-of-row / last-row cells drop theirs so the wrap's own border closes
+ * the grid without doubling up. 2px padding gives the rounded input inside
+ * room to show its corners against the sharp cell border. */
+.edit-table-wrap td {
+  padding: 2px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.edit-table-wrap td:last-child {
+  border-right: none;
+}
+
+.edit-table-wrap tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Zebra rows for at-a-glance scanability. Kept very subtle so it doesn't
+ * fight the hover/focus highlights below. */
+.edit-table-wrap tbody tr:nth-child(odd) td {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+/* Whole-row hover — a faint green wash that says "you're editing this row".
+ * The focused cell will sit on top of this with a much stronger effect. */
+.edit-table-wrap tbody tr:hover td {
+  background: rgba(74, 222, 128, 0.045);
+}
+
+/* Sticky header with a subtle gradient for depth. Right + bottom borders
+ * continue the grid started by the body cells. */
+.edit-table-wrap th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 4px 3px;
+  background: linear-gradient(to bottom, var(--surface2), var(--surface));
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.edit-table-wrap th:last-child {
+  border-right: none;
+}
+
+/* === EDITABLE INPUTS — selector specificity (0,2,1) wins over the generic
+ *     input[type="text"] rule (0,1,1) earlier in this file. === */
+
+.edit-table-wrap input.edit-cell-input,
+.edit-table-wrap input.edit-col-header-input {
+  display: block;
+  width: 100%;
+  min-width: 110px;
+  box-sizing: border-box;
+  background: transparent;
+  border: 1px solid transparent;
+  /* Slight rounding — invisible when transparent but softens the green focus
+   * outline and the hover background so they look like pill-shaped tokens
+   * sitting inside the sharp grid cells. The td has matching padding so the
+   * rounded corners have breathing room and aren't hidden by the cell edge. */
+  border-radius: 5px;
+  outline: none;
+  font-family: var(--mono);
+  color: var(--text);
+  cursor: text;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.18s ease;
+}
+
+/* Data-cell inputs */
+.edit-table-wrap input.edit-cell-input {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+/* Hover: brighter background, hint that the cell is interactable. */
+.edit-table-wrap input.edit-cell-input:hover:not(:focus) {
+  background: rgba(74, 222, 128, 0.08);
+}
+
+/* Focus: green ring effect.
+ *  - The 1px border-color change plus the inset 1px shadow combine to look
+ *    like a clean 2px green outline that doesn't shift content.
+ *  - The outer drop-shadow gives a soft glow that "lifts" the cell visually.
+ *  - position+z-index raise the focused cell over its neighbors so the glow
+ *    isn't clipped by adjacent cells' backgrounds. */
+.edit-table-wrap input.edit-cell-input:focus {
+  background: var(--surface);
+  border-color: var(--green);
+  color: var(--text);
+  box-shadow:
+    inset 0 0 0 1px var(--green),
+    0 4px 14px rgba(74, 222, 128, 0.22),
+    0 0 0 3px rgba(74, 222, 128, 0.12);
+  position: relative;
+  z-index: 2;
+}
+
+/* Column header inputs — uppercase label styling at rest; same focus
+ * treatment as cells so renaming a column feels like the same gesture. */
+.edit-table-wrap input.edit-col-header-input {
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  border-radius: 4px;
+}
+
+.edit-table-wrap input.edit-col-header-input:hover:not(:focus) {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.edit-table-wrap input.edit-col-header-input:focus {
+  background: var(--surface);
+  color: var(--green);
+  border-color: var(--green);
+  box-shadow:
+    inset 0 0 0 1px var(--green),
+    0 4px 14px rgba(74, 222, 128, 0.22),
+    0 0 0 3px rgba(74, 222, 128, 0.12);
+  position: relative;
+  z-index: 2;
+}
+
+/* === DIRTY-STATE HIGHLIGHT ===
+ * .edited is toggled by the input handler when a cell's value differs from
+ * its original. Yellow stands out clearly against the green focus theme so
+ * the user can spot which cells they've actually modified before hitting Save.
+ * Removed automatically on save by re-rendering the modal from fresh data. */
+
+.edit-table-wrap input.edit-cell-input.edited,
+.edit-table-wrap input.edit-col-header-input.edited {
+  color: var(--yellow);
+  background: rgba(251, 191, 36, 0.10);
+}
+
+.edit-table-wrap input.edit-cell-input.edited:hover:not(:focus),
+.edit-table-wrap input.edit-col-header-input.edited:hover:not(:focus) {
+  background: rgba(251, 191, 36, 0.16);
+}
+
+/* Focused + edited cell: yellow takes precedence over green so the "I'm
+ * editing this *and* it's already changed" state is unambiguous. */
+.edit-table-wrap input.edit-cell-input.edited:focus,
+.edit-table-wrap input.edit-col-header-input.edited:focus {
+  background: rgba(251, 191, 36, 0.18);
+  color: var(--yellow);
+  border-color: var(--yellow);
+  box-shadow:
+    inset 0 0 0 1px var(--yellow),
+    0 4px 14px rgba(251, 191, 36, 0.25),
+    0 0 0 3px rgba(251, 191, 36, 0.15);
+  position: relative;
+  z-index: 2;
+}
+
+.edit-row-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.form-field {
+  margin-bottom: 14px;
+}
+
+.form-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  display: block;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.color-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+.color-swatch.selected {
+  border-color: white;
+  transform: scale(1.15);
+}
+
+/* ── TABLE ── */
+.table-container {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+thead {
+  position: sticky;
+  top: 0;
+  background: var(--surface2);
+  z-index: 2;
+}
+
+th {
+  padding: 9px 14px;
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  font-family: var(--mono);
+}
+
+td {
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(42, 46, 66, 0.5);
+  color: var(--text);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}

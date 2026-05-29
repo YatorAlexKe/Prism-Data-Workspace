@@ -1,0 +1,109 @@
+.ingest-page {
+  padding: 24px;
+  max-width: 800px;
+}
+
+.ingest-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--surface2);
+  padding: 4px;
+  border-radius: var(--radius);
+  width: fit-content;
+  margin-bottom: 20px;
+}
+
+.itab {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  transition: all 0.15s;
+  font-family: var(--sans);
+}
+
+.itab.active {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.ingest-zone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  background: var(--surface);
+}
+
+.ingest-zone:hover,
+.ingest-zone.drag {
+  border-color: var(--green);
+  background: rgba(74, 222, 128, 0.03);
+}
+
+.ingest-zone input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ingest-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.ingest-label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.ingest-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.url-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.url-input-row input {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.upload-progress {
+  margin-top: 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: none;
+}
+
+.progress-bar {
+  height: 3px;
+  background: linear-gradient(90deg, var(--green), var(--blue));
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+
+.upload-result {
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-top: 16px;
+  display: none;
+}

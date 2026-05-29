@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
 
-from routers import ingest, query, profile, projects, schema
+from routers import ingest, query, profile, projects, schema, sheets
 
 app = FastAPI(title="Prism — AI Data Workspace", version="2.0.0")
 
@@ -20,7 +20,7 @@ app.include_router(ingest.router,   prefix="/api", tags=["ingest"])
 app.include_router(query.router,    prefix="/api", tags=["query"])
 app.include_router(profile.router,  prefix="/api", tags=["profile"])
 app.include_router(projects.router, prefix="/api", tags=["projects"])
-app.include_router(schema.router,   prefix="/api", tags=["schema"])
+app.include_router(sheets.router,   prefix="/api", tags=["sheets"])
 
 frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
 if os.path.exists(frontend_path):

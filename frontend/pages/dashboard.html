@@ -1,0 +1,34 @@
+<div class="dashboard">
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Datasets</div>
+      <div class="stat-value" id="stat-datasets">0</div>
+      <div class="stat-sub">uploaded files</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Queries Run</div>
+      <div class="stat-value" id="stat-queries">0</div>
+      <div class="stat-sub">total executions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Saved Queries</div>
+      <div class="stat-value" id="stat-saved">0</div>
+      <div class="stat-sub">across projects</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Projects</div>
+      <div class="stat-value" id="stat-projects">0</div>
+      <div class="stat-sub">workspaces</div>
+    </div>
+  </div>
+
+  <div class="section-title">Recent Datasets</div>
+  <div class="dataset-grid" id="dashboard-datasets">
+    <div style="color:var(--muted);font-size:13px;padding:20px 0">No datasets yet — <span
+        style="color:var(--green);cursor:pointer" onclick="showPage('ingest')">import one to get started</span>
+    </div>
+  </div>
+
+  <div class="section-title">Recent Queries</div>
+  <div id="dashboard-history" style="max-height:300px;overflow-y:auto"></div>
+</div>

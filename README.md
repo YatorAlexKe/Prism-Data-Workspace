@@ -13,11 +13,15 @@ A production-grade natural language data query tool for professionals.
 
 ## Quick Start
 
+Prism has two parts: a **FastAPI backend** (Python) and a **React frontend** (Vite). Install both once, then run together.
+
+### 1. Backend (Python ≥ 3.10)
+
 ```bash
-cd prism/backend
+cd Prism-Data-Workspace/backend
 pip install -r requirements.txt
 
-# Start Ollama (recommended)
+# Start Ollama (recommended local LLM)
 ollama pull llama3.2
 
 # Run server
@@ -28,7 +32,36 @@ venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
 venv/bin/python -m uvicorn main:app --reload --port 8000
 ```
 
-Open **http://localhost:8000**
+### 2. Frontend (Node.js ≥ 18)
+
+```bash
+cd Prism-Data-Workspace/frontend
+npm install
+```
+
+Two ways to run the UI:
+
+**Option A — Development mode (hot reload, two processes)**
+```bash
+# Terminal 1: backend (from step 1)
+# Terminal 2:
+cd Prism-Data-Workspace/frontend
+npm run dev
+```
+Open **http://localhost:5173**. Vite proxies `/api/*` requests to the FastAPI server on `:8000`, so both must be running.
+
+**Option B — Production mode (single origin, one process)**
+```bash
+cd Prism-Data-Workspace/frontend
+npm run build
+```
+This emits a static bundle to `frontend/dist/`. The FastAPI server picks it up automatically — just run the backend and open **http://localhost:8000**. Re-run `npm run build` whenever you change the frontend.
+
+### Frontend architecture
+- **Vite + React 18 + React Router 6** — SPA shell with client-side routing
+- **AppContext** (`frontend/src/AppContext.jsx`) — shared workspace state (selected tables, datasets, query results, LLM config)
+- **`frontend/src/api.js`** — single source of truth for the API base URL (defaults to `/api`; override with `VITE_API_BASE` env var)
+- **CSS preserved as-is** from the original vanilla build — see `frontend/src/css/`
 
 ## Sample Datasets
 - `docs/sample_datasets/sales_data.csv` — 200 sales orders

@@ -128,7 +128,7 @@ def preprocess_image(content: bytes, *, isolate_table: bool = True) -> bytes:
     surrounding paragraph text doesn't pollute img2table's row/column inference.
     Detection is non-destructive: if no clear region is found, we fall back to
     the full image. Disable for borderless tables (no rules to detect)."""
-    from PIL import Image, ImageOps
+    from PIL import Image, ImageOps, ImageFilter
 
     img = Image.open(io.BytesIO(content))
     orig_size = img.size
@@ -165,6 +165,14 @@ def preprocess_image(content: bytes, *, isolate_table: bool = True) -> bytes:
     if scale != 1.0:
         img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
 
+    # Sharpen edges blurred by the resize. radius=1.5px is small enough to not
+    # amplify large color blobs; percent=140 is a moderate sharpening strength;
+    # threshold=3 prevents the filter from amplifying random noise in flat
+    # background areas (only pixels whose contrast with neighbors exceeds the
+    # threshold get sharpened). Universally helpful for OCR — Tesseract's
+    # LSTM engine reads crisp character edges noticeably better.
+    img = img.filter(ImageFilter.UnsharpMask(radius=1.5, percent=140, threshold=3))
+
     print(
         f"[image_ocr] preprocess: input={orig_size} after_exif={after_exif} "
         f"after_isolate={(w, h)} final={img.size} scale={scale:.2f} crop={crop_info}",
@@ -187,6 +195,8 @@ def extract_tables_from_image(
     implicit_rows: bool = False,
     isolate_table: bool = True,
     unwrap_lines: bool = True,
+    confidence_backfill: bool = True,
+    backfill_min_confidence: int = 5,
 ) -> list:
     """OCR an image and return every detected table as a pandas DataFrame.
 
@@ -211,6 +221,16 @@ def extract_tables_from_image(
             wrapped content like "Manchest\\ner" → "Manchester" and headers
             like "Departme\\nnt" → "Department". Applied to all cells before
             the header row is promoted, so headers benefit too.
+        confidence_backfill: if True and the primary extraction produced any
+            empty cells, run a second extraction at backfill_min_confidence
+            and fill ONLY the empty cells (never overwrites populated cells).
+            Recovers faint/italic/low-contrast text that Tesseract scored
+            below min_confidence and would otherwise be dropped. Costs one
+            extra OCR pass, but only when something was actually dropped.
+        backfill_min_confidence: confidence threshold used for the backfill
+            pass. Default 5 is low enough to catch nearly anything Tesseract
+            could read at all. Ignored when confidence_backfill is False or
+            when backfill_min_confidence >= min_confidence (nothing to gain).
 
     Raises:
         RuntimeError: if img2table / pytesseract isn't installed, or if the
@@ -235,21 +255,30 @@ def extract_tables_from_image(
             "tesseract.exe is not on PATH."
         ) from e
 
-    # Couple borderless detection to implicit_rows. Both are different facets
-    # of "infer table structure from text positions rather than visible rules".
-    # Decoupling them means borderless detection still fires on ruled tables
-    # with wrapped cell content — text lines inside cells get read as separate
-    # "rows" and that bogus table comes back first via table_index=0.
+    # Couple borderless detection to implicit_rows for the PRIMARY pass. Both
+    # are different facets of "infer table structure from text positions rather
+    # than visible rules". Decoupling them in the primary pass means borderless
+    # detection still fires on ruled tables with wrapped cell content — text
+    # lines inside cells get read as separate "rows" and that bogus table comes
+    # back first via table_index=0. A dedicated borderless FALLBACK pass below
+    # still rescues genuinely borderless tables without breaking ruled ones.
     borderless_tables = implicit_rows
 
-    def _run_ocr(processed_bytes):
+    def _run_ocr(processed_bytes, *, force_borderless: bool = False, confidence: int | None = None):
         d = Image(src=io.BytesIO(processed_bytes))
+        # force_borderless flips both flags on for the last-resort fallback.
+        # img2table needs implicit_rows=True alongside borderless_tables=True
+        # for borderless detection to produce anything — cells are inferred
+        # from text positions, not from rules.
+        use_implicit = implicit_rows or force_borderless
+        use_borderless = borderless_tables or force_borderless
+        use_conf = min_confidence if confidence is None else confidence
         try:
             return d.extract_tables(
                 ocr=ocr,
-                implicit_rows=implicit_rows,
-                borderless_tables=borderless_tables,
-                min_confidence=min_confidence,
+                implicit_rows=use_implicit,
+                borderless_tables=use_borderless,
+                min_confidence=use_conf,
             )
         except Exception as e:
             raise RuntimeError(f"OCR failed: {e}") from e
@@ -260,11 +289,15 @@ def extract_tables_from_image(
         processed = content
 
     extracted = _run_ocr(processed)
+    # Track which extraction mode produced the final tables so the backfill
+    # pass below uses the SAME mode (otherwise the two passes would detect
+    # different cell layouts and the position-by-position merge would fail).
+    used_force_borderless = False
 
-    # Safety net: if isolation was on and yielded nothing (tight crop confused
+    # Tier 2: if isolation was on and yielded nothing (tight crop confused
     # img2table, detector picked the wrong region, etc.), retry on the
     # un-isolated full image. Guarantees we never do worse than the pre-feature
-    # baseline. Costs one extra OCR run only on the failure path.
+    # baseline.
     if not extracted and isolate_table and preprocess:
         print(
             "[image_ocr] cropped extraction yielded 0 tables; retrying with isolate_table=False",
@@ -273,7 +306,47 @@ def extract_tables_from_image(
         processed = preprocess_image(content, isolate_table=False)
         extracted = _run_ocr(processed)
 
+    # Tier 3 (last resort): borderless retry. Covers "list-style" tables that
+    # have only a header band / outer rule and no internal cell rules — these
+    # produce 0 tables in every ruled-detection pass above. Reuses the
+    # already-preprocessed `processed` bytes (full image at this point — tier 2
+    # will have replaced any isolated crop).
+    if not extracted:
+        print(
+            "[image_ocr] no tables via ruled detection; retrying with borderless_tables=True",
+            file=sys.stderr, flush=True,
+        )
+        extracted = _run_ocr(processed, force_borderless=True)
+        used_force_borderless = True
+
     print(f"[image_ocr] extracted {len(extracted)} table(s)", file=sys.stderr, flush=True)
+
+    # Cell-level confidence backfill. Re-runs OCR at a much lower confidence
+    # threshold and fills ONLY cells that came back empty in the primary pass.
+    # Never overwrites populated cells — preserves clean primary results — and
+    # only runs at all when there's measurable loss to recover.
+    if (
+        extracted
+        and confidence_backfill
+        and backfill_min_confidence < min_confidence
+    ):
+        primary_dfs = [getattr(t, 'df', None) for t in extracted]
+        empties = sum(
+            int(df.isna().sum().sum() + (df == '').sum().sum())
+            for df in primary_dfs
+            if df is not None and not df.empty
+        )
+        if empties > 0:
+            print(
+                f"[image_ocr] {empties} empty cell(s) in primary pass; running low-confidence backfill",
+                file=sys.stderr, flush=True,
+            )
+            backfill_tables = _run_ocr(
+                processed,
+                force_borderless=used_force_borderless,
+                confidence=backfill_min_confidence,
+            )
+            extracted = _merge_backfill(extracted, backfill_tables)
 
     dataframes = []
     for tbl in extracted:
@@ -290,6 +363,55 @@ def extract_tables_from_image(
         dataframes.append(df)
 
     return dataframes
+
+
+def _merge_backfill(primary_tables, backfill_tables):
+    """For each table in `primary_tables`, fill empty cells from the matching
+    table in `backfill_tables` (same index, same shape). Mutates the primary
+    tables' DataFrames in place and returns the same list.
+
+    Conservative merge rules:
+    - Only fill cells that are NaN or empty string in primary.
+    - Skip the whole table if shapes differ (different cell layouts → can't
+      trust position-by-position mapping; would risk pasting wrong values into
+      correct rows).
+    - Skip backfill values that are themselves NaN/empty (no improvement).
+    """
+    for i, prim_tbl in enumerate(primary_tables):
+        prim_df = getattr(prim_tbl, 'df', None)
+        if prim_df is None or prim_df.empty:
+            continue
+        if i >= len(backfill_tables):
+            continue
+        back_df = getattr(backfill_tables[i], 'df', None)
+        if back_df is None or back_df.empty:
+            continue
+        if prim_df.shape != back_df.shape:
+            # Different cell layout between the two passes — bail out on this
+            # table rather than risk misalignment. The lower-confidence pass
+            # sometimes detects extra/fewer rows due to noise getting through.
+            print(
+                f"[image_ocr] backfill skipped for table {i}: shape mismatch "
+                f"{prim_df.shape} vs {back_df.shape}",
+                file=sys.stderr, flush=True,
+            )
+            continue
+        filled = 0
+        # Iterate by position so we're immune to mismatched column labels
+        # between the two passes (header row noise can shift names).
+        for r in range(prim_df.shape[0]):
+            for c in range(prim_df.shape[1]):
+                p = prim_df.iat[r, c]
+                if p is None or (isinstance(p, float) and p != p) or p == '':
+                    b = back_df.iat[r, c]
+                    if b is None or (isinstance(b, float) and b != b) or b == '':
+                        continue
+                    prim_df.iat[r, c] = b
+                    filled += 1
+        if filled:
+            print(f"[image_ocr] backfill filled {filled} cell(s) in table {i}",
+                  file=sys.stderr, flush=True)
+    return primary_tables
 
 
 def _collapse_wrapped_lines(value):

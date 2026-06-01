@@ -79,6 +79,20 @@
   background: rgba(74, 222, 128, 0.1);
 }
 
+.table-chip-delete {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 0 4px;
+  border-radius: 3px;
+  margin-left: 2px;
+  transition: all 0.1s;
+}
+
+.table-chip-delete:hover {
+  color: var(--red);
+  background: rgba(248, 113, 113, 0.1);
+}
+
 .schema-panel {
   flex: 1;
   overflow-y: auto;

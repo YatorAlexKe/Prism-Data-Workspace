@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { API } from '../api.js';
 import { useApp } from '../AppContext.jsx';
 import { useEditDataset } from '../components/EditDatasetContext.jsx';
+import { useDeleteDataset } from '../components/DeleteDatasetContext.jsx';
 import SaveQueryModal from '../components/SaveQueryModal.jsx';
 
 // Query page: sidebar (table picker + schema) on the left, query input + tabbed
@@ -22,6 +23,7 @@ const QUERY_TEMPLATES = [
 
 export default function Query() {
   const { openEditDataset } = useEditDataset();
+  const { openDeleteDataset } = useDeleteDataset();
   const {
     allDatasets, setAllDatasets,
     selectedTables, setSelectedTables,
@@ -221,6 +223,11 @@ export default function Query() {
                   title="Edit dataset"
                   onClick={e => { e.stopPropagation(); openEditDataset(d.table_name); }}
                 >✎</span>
+                <span
+                  className="table-chip-delete"
+                  title="Delete dataset"
+                  onClick={e => { e.stopPropagation(); openDeleteDataset(d.table_name); }}
+                >🗑</span>
               </div>
             ))}
           </div>

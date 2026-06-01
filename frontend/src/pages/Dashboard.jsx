@@ -3,17 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { API } from '../api.js';
 import { useApp } from '../AppContext.jsx';
 import { useEditDataset } from '../components/EditDatasetContext.jsx';
+import { useDeleteDataset } from '../components/DeleteDatasetContext.jsx';
 
 // Dashboard: 4 stat cards + recent datasets grid + recent queries strip.
 // Loads everything in parallel like the old loadDashboard().
 export default function Dashboard() {
   const navigate = useNavigate();
   const { openEditDataset } = useEditDataset();
-  const { setAllDatasets, setSelectedTables, setCurrentTable, setHistoryCount } = useApp();
+  const { openDeleteDataset } = useDeleteDataset();
+  const { allDatasets, setAllDatasets, setSelectedTables, setCurrentTable, setHistoryCount } = useApp();
 
-  const [datasets, setDatasets] = useState([]);
   const [history, setHistory] = useState([]);
-  const [stats, setStats] = useState({ datasets: 0, queries: 0, saved: 0, projects: 0 });
+  const [stats, setStats] = useState({ queries: 0, saved: 0, projects: 0 });
 
   useEffect(() => {
     (async () => {
@@ -28,10 +29,11 @@ export default function Dashboard() {
         const hist = (await hRes.json()).history || [];
         const proj = (await pRes.json()).projects || [];
         const saved = (await qRes.json()).queries || [];
-        setDatasets(ds);
         setHistory(hist);
-        setStats({ datasets: ds.length, queries: hist.length, saved: saved.length, projects: proj.length });
-        // Push datasets into AppContext so the sidebar updates too.
+        setStats({ queries: hist.length, saved: saved.length, projects: proj.length });
+        // Push datasets into AppContext so the sidebar updates too — and so the
+        // cards below stay reactive when refreshDatasets() is called after
+        // create/edit/delete elsewhere in the app.
         setAllDatasets(ds);
         setHistoryCount(hist.length);
       } catch (e) { }
@@ -62,7 +64,7 @@ export default function Dashboard() {
     <div className="page active">
       <div className="dashboard">
         <div className="stat-grid">
-          <StatCard label="Datasets" value={stats.datasets} sub="uploaded files" />
+          <StatCard label="Datasets" value={allDatasets.length} sub="uploaded files" />
           <StatCard label="Queries Run" value={stats.queries} sub="total executions" />
           <StatCard label="Saved Queries" value={stats.saved} sub="across projects" />
           <StatCard label="Projects" value={stats.projects} sub="workspaces" />
@@ -70,14 +72,14 @@ export default function Dashboard() {
 
         <div className="section-title">Recent Datasets</div>
         <div className="dataset-grid">
-          {datasets.length === 0 ? (
+          {allDatasets.length === 0 ? (
             <div style={{ color: 'var(--muted)', fontSize: 13, padding: '20px 0' }}>
               No datasets yet —{' '}
               <span style={{ color: 'var(--green)', cursor: 'pointer' }} onClick={() => navigate('/ingest')}>
                 import one to get started
               </span>
             </div>
-          ) : datasets.map(d => {
+          ) : allDatasets.map(d => {
             const q = d.data_quality_score || 0;
             const qc = q > 80 ? 'var(--green)' : q > 60 ? 'var(--yellow)' : 'var(--red)';
             const fmt = d.file_format || 'csv';
@@ -98,6 +100,7 @@ export default function Dashboard() {
                   <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); goQueryWith(d.table_name); }}>Query</button>
                   <button className="btn btn-blue btn-sm" onClick={e => { e.stopPropagation(); goProfileWith(d.table_name); }}>Profile</button>
                   <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); openEditDataset(d.table_name); }}>✎ Edit</button>
+                  <button className="btn btn-red btn-sm" onClick={e => { e.stopPropagation(); openDeleteDataset(d.table_name); }}>🗑 Delete</button>
                 </div>
               </div>
             );

@@ -33,6 +33,7 @@ export default function Sidebar() {
 
         <div className="nav-section-label">Organize</div>
         <NavItem to="/projects" icon="▣" label="Projects" />
+        <NavItem to="/connections" icon="🔌" label="Connections" />
         <NavItem to="/history" icon="◷" label="History" badge={historyCount} />
       </nav>
 

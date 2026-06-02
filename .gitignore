@@ -46,3 +46,7 @@ frontend/dist/
 # Local-only documentation — not for the repo
 docs/summaries/
 docs/agents/
+
+#sql
+database/prism.key
+database/*.key

@@ -16,11 +16,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(ingest.router,   prefix="/api", tags=["ingest"])
-app.include_router(query.router,    prefix="/api", tags=["query"])
-app.include_router(profile.router,  prefix="/api", tags=["profile"])
-app.include_router(projects.router, prefix="/api", tags=["projects"])
-app.include_router(connections.router, prefix="/api", tags=["connections"])
+app.include_router(ingest.router,       prefix="/api", tags=["ingest"])
+app.include_router(query.router,        prefix="/api", tags=["query"])
+app.include_router(profile.router,      prefix="/api", tags=["profile"])
+app.include_router(projects.router,     prefix="/api", tags=["projects"])
+app.include_router(schema.router,       prefix="/api", tags=["schema"])
+app.include_router(sheets.router,       prefix="/api", tags=["sheets"])
+app.include_router(connections.router,  prefix="/api", tags=["connections"])
 
 # The Vite build emits to frontend/dist/. In development you typically run
 # `npm run dev` (Vite on :5173 with /api proxied here); the dist folder may

@@ -6,6 +6,7 @@ import EditDatasetModal from './components/EditDatasetModal.jsx';
 import { EditDatasetProvider } from './components/EditDatasetContext.jsx';
 import DeleteDatasetModal from './components/DeleteDatasetModal.jsx';
 import { DeleteDatasetProvider } from './components/DeleteDatasetContext.jsx';
+import Connections from './pages/Connections.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Ingest from './pages/Ingest.jsx';
 import Query from './pages/Query.jsx';
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/history" element={<History />} />
+            <Route path="/connections" element={<Connections />} />
           </Routes>
         </div>
         <EditDatasetModal />

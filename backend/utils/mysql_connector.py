@@ -54,13 +54,32 @@ def test_connection(host: str, port: int, database: str,
         conn.close()
         return {
             "success": True,
-            "message": f"Connected successfully",
+            "message": "Connected successfully",
             "version": result.get('version', 'Unknown')
         }
     except pymysql.err.OperationalError as e:
-        return {"success": False, "message": f"Connection failed: {str(e)}"}
+        code = e.args[0]
+        if code == 2003:
+            return {"success": False, "message": f"Cannot reach server at {host}:{port}. Check host and port."}
+        elif code == 2013:
+            return {"success": False, "message": "Connection timed out. Check if MySQL is running."}
+        elif code == 1045:
+            return {"success": False, "message": f"Wrong username or password for user '{username}'."}
+        elif code == 1049:
+            return {"success": False, "message": f"Database '{database}' does not exist."}
+        elif code == 1044:
+            return {"success": False, "message": f"User '{username}' has no access to database '{database}'. Run: GRANT SELECT ON {database}.* TO '{username}'@'{host}'; FLUSH PRIVILEGES;"}
+        else:
+            return {"success": False, "message": f"Connection error ({code}): {str(e)}"}
+    except pymysql.err.InternalError as e:
+        return {"success": False, "message": f"MySQL error: {str(e)}"}
     except Exception as e:
-        return {"success": False, "message": f"Error: {str(e)}"}
+        msg = str(e)
+        if 'caching_sha2_password' in msg:
+            return {"success": False, "message": "Authentication plugin issue. Run in MySQL: ALTER USER '{username}'@'{host}' IDENTIFIED WITH mysql_native_password BY 'your_password'; FLUSH PRIVILEGES;"}
+        elif 'SSL' in msg:
+            return {"success": False, "message": "SSL connection failed. Try disabling SSL or check your MySQL SSL config."}
+        return {"success": False, "message": f"Unexpected error: {msg}"}
 
 def get_schema(host: str, port: int, database: str,
                username: str, password: str) -> list:

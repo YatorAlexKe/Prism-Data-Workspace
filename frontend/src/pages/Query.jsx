@@ -64,8 +64,26 @@ export default function Query() {
   }, [setAllDatasets]);
 
   // Re-load schema panel whenever currentTable changes.
-  useEffect(() => {
+useEffect(() => {
     if (!currentTable) { setSchemaColumns([]); return; }
+    
+    // Check if this is a MySQL connection
+    const mysqlCtx = sessionStorage.getItem('mysql_connection');
+    if (mysqlCtx) {
+      const ctx = JSON.parse(mysqlCtx);
+      // Fetch schema from MySQL connection
+      (async () => {
+        try {
+          const res = await fetch(`${API}/connections/${ctx.connection_id}/schema`);
+          const data = await res.json();
+          const table = (data.tables || []).find(t => t.table_name === ctx.table_name);
+          setSchemaColumns(table?.columns || []);
+        } catch (e) { setSchemaColumns([]); }
+      })();
+      return;
+    }
+
+    // Regular uploaded dataset
     (async () => {
       try {
         const res = await fetch(`${API}/schema/${currentTable}`);
@@ -113,7 +131,20 @@ export default function Query() {
     setCurrentSQL('');
     try {
       let url, body;
-      if (selectedTables.length > 1) {
+
+      // Check if this is a MySQL connection query
+      const mysqlCtx = sessionStorage.getItem('mysql_connection');
+      if (mysqlCtx) {
+        const ctx = JSON.parse(mysqlCtx);
+        url = `${API}/connections/query`;
+        body = {
+          connection_id: ctx.connection_id,
+          table_name: ctx.table_name,
+          question: q,
+          ...llm
+        };
+        sessionStorage.removeItem('mysql_connection');
+      } else if (selectedTables.length > 1) {
         url = `${API}/query/multi-table`;
         body = { table_names: selectedTables, question: q, ...llm };
       } else {

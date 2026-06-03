@@ -4,6 +4,7 @@ import { useApp } from '../AppContext.jsx';
 import { useEditDataset } from '../components/EditDatasetContext.jsx';
 import { useDeleteDataset } from '../components/DeleteDatasetContext.jsx';
 import SaveQueryModal from '../components/SaveQueryModal.jsx';
+import ResultMap from '../components/ResultMap.jsx';
 
 // Query page: sidebar (table picker + schema) on the left, query input + tabbed
 // results on the right. Replaces the old frontend/js/pages/query.js — all
@@ -43,6 +44,7 @@ export default function Query() {
   const [resultTab, setResultTab] = useState('table');
   const [joinSuggestions, setJoinSuggestions] = useState(null); // null | [] | [...]
   const [saveOpen, setSaveOpen] = useState(false);
+  const [locationInfo, setLocationInfo] = useState(null);
   const inputRef = useRef(null);
 
   // Initial load: fetch tables (datasets).
@@ -161,6 +163,7 @@ useEffect(() => {
       setCurrentResult(data.result);
       setCurrentSQL(data.sql);
       setChartSuggestion(data.chart_suggestion || null);
+      setLocationInfo(data.location_info || null);
       setResultTab('table');
       loadHistoryCount();
     } catch (e) {
@@ -339,6 +342,9 @@ useEffect(() => {
               <div className="results-tabs">
                 <button className={`rtab${resultTab === 'table' ? ' active' : ''}`} onClick={() => setResultTab('table')}>Table</button>
                 <button className={`rtab${resultTab === 'chart' ? ' active' : ''}`} onClick={() => setResultTab('chart')}>Chart</button>
+                {locationInfo?.type && (
+                  <button className={`rtab${resultTab === 'map' ? ' active' : ''}`} onClick={() => setResultTab('map')}>🗺️ Map</button>
+                )}
                 <button className={`rtab${resultTab === 'sql' ? ' active' : ''}`} onClick={() => setResultTab('sql')}>SQL</button>
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px' }}>
                   <button className="btn btn-ghost btn-sm" onClick={() => exportResults('csv')}>↓ CSV</button>
@@ -362,6 +368,7 @@ useEffect(() => {
               {!loading && currentResult && resultTab === 'table' && <ResultTable result={currentResult} />}
               {!loading && currentResult && resultTab === 'chart' && <ResultChart result={currentResult} suggestion={chartSuggestion} />}
               {!loading && currentResult && resultTab === 'sql' && <ResultSQL sql={currentSQL} />}
+              {!loading && currentResult && resultTab === 'map' && <ResultMap result={currentResult} locationInfo={locationInfo} />}
             </div>
           </div>
         </div>

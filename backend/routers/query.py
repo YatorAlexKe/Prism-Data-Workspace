@@ -40,6 +40,42 @@ class MultiTableQueryRequest(BaseModel):
     api_key: Optional[str] = None
     model: Optional[str] = None
 
+def detect_location_type(columns: list) -> dict:
+    col_names = [c['name'].lower() if isinstance(c, dict) else c.lower() for c in columns]
+    
+    # Check for lat/lon coordinates
+    has_lat = any(c in col_names for c in ['latitude', 'lat'])
+    has_lon = any(c in col_names for c in ['longitude', 'lon', 'lng', 'long'])
+    if has_lat and has_lon:
+        lat_col = next(c for c in col_names if c in ['latitude', 'lat'])
+        lon_col = next(c for c in col_names if c in ['longitude', 'lon', 'lng', 'long'])
+        return {
+            "type": "coordinates",
+            "lat_col": lat_col,
+            "lon_col": lon_col
+        }
+    
+    # Check for country level
+    country_cols = ['country', 'nation', 'country_name']
+    for col in col_names:
+        if col in country_cols or 'country' in col:
+            return {
+                "type": "country",
+                "location_col": col_names[col_names.index(col)]
+            }
+    
+    # Check for region/province/state level
+    region_cols = ['province', 'state', 'region', 'district', 
+                   'county', 'territory', 'area', 'zone', 'city', 'town']
+    for col in col_names:
+        if any(r in col for r in region_cols):
+            return {
+                "type": "region",
+                "location_col": col_names[col_names.index(col)]
+            }
+    
+    return {"type": None}
+
 def get_table_schema(conn, table_name: str) -> list:
     cursor = conn.execute(f"PRAGMA table_info({table_name})")
     return [{"name": c['name'], "type": c['type'] or 'text'} for c in cursor.fetchall()]
@@ -104,6 +140,9 @@ async def natural_language_query(req: QueryRequest):
         
         # Chart suggestion
         chart = heuristic_chart(result['columns'], result['row_count'])
+
+        # Location detection
+        location = detect_location_type(result['columns'])
         
         conn.execute("""
             INSERT INTO query_history (table_name, question, sql_query, row_count, execution_ms)
@@ -117,6 +156,7 @@ async def natural_language_query(req: QueryRequest):
             "schema": schema_context,
             "result": result,
             "chart_suggestion": chart,
+            "location_info": location,
             "timing": {"llm_ms": llm_ms, "exec_ms": exec_ms}
         }
     finally:

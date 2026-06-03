@@ -47,6 +47,6 @@ frontend/dist/
 docs/summaries/
 docs/agents/
 
-#sql
+#mySQL
 database/prism.key
 database/*.key

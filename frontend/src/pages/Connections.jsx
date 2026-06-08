@@ -234,7 +234,7 @@ export default function Connections() {
 
         {/* ADD TAB */}
         {tab === 'add' && (
-          <div style={{ maxWidth: 520 }}>
+          <div style={{ maxWidth: 520, margin: '0 auto' }}>
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 24 }}>
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ background: 'rgba(96,165,250,0.15)', color: 'var(--blue)', fontSize: 10, padding: '2px 6px', borderRadius: 3, fontFamily: 'var(--mono)' }}>MySQL</span>

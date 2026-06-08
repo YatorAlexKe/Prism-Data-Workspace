@@ -17,6 +17,7 @@ venv/
 # AI Agent
 .claude
 CLAUDE.md
+.codegraph
 
 # Google Credentials (NEVER commit these)
 credentials/

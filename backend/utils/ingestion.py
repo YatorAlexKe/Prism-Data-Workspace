@@ -58,12 +58,28 @@ def parse_url(url: str) -> pd.DataFrame:
 def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     # Sanitize column names
     df.columns = [sanitize_column_name(c) for c in df.columns]
+    # Deduplicate — sanitization can collide ("Total ($)" + "Total (%)" → "total"),
+    # and OCR can yield repeated header text. Duplicate column labels make
+    # df[col] return a DataFrame instead of a Series, which crashes downstream.
+    df.columns = _dedupe_columns(df.columns)
     # Remove fully empty rows
     df = df.dropna(how='all')
     # Limit to 500k rows for performance
     if len(df) > 500000:
         df = df.head(500000)
     return df
+
+def _dedupe_columns(cols) -> list:
+    seen = {}
+    out = []
+    for c in cols:
+        if c not in seen:
+            seen[c] = 0
+            out.append(c)
+        else:
+            seen[c] += 1
+            out.append(f"{c}_{seen[c]}")
+    return out
 
 def get_col_type(series: pd.Series) -> str:
     dtype = str(series.dtype)

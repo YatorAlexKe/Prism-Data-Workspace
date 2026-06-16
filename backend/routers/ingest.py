@@ -89,6 +89,65 @@ async def ingest_url(payload: dict):
     
     return store_dataframe(df, table_name, url, 'url', project_id, source_url=url)
 
+IMAGE_EXTS = {'png', 'jpg', 'jpeg', 'bmp', 'tiff', 'tif', 'webp'}
+
+@router.post("/ingest/image")
+async def ingest_image(
+    file: UploadFile = File(...),
+    project_id: Optional[int] = Form(None),
+    table_index: Optional[int] = Form(0),
+    min_confidence: int = Form(25),
+    has_header: bool = Form(True),
+    lang: str = Form('eng'),
+    implicit_rows: bool = Form(False),
+    isolate_table: bool = Form(True),
+    unwrap_lines: bool = Form(True),
+    confidence_backfill: bool = Form(True),
+    backfill_min_confidence: int = Form(5),
+):
+    init_db()
+    filename = file.filename or 'image'
+    ext = filename.lower().rsplit('.', 1)[-1] if '.' in filename else ''
+    if ext not in IMAGE_EXTS:
+        raise HTTPException(status_code=400, detail=f"Unsupported image format: .{ext}")
+
+    content = await file.read()
+
+    from utils.image_ocr import extract_tables_from_image
+    try:
+        tables = extract_tables_from_image(
+            content,
+            min_confidence=min_confidence,
+            lang=lang,
+            has_header=has_header,
+            implicit_rows=implicit_rows,
+            isolate_table=isolate_table,
+            unwrap_lines=unwrap_lines,
+            confidence_backfill=confidence_backfill,
+            backfill_min_confidence=backfill_min_confidence,
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to OCR image: {e}")
+
+    if not tables:
+        raise HTTPException(status_code=400, detail="No tables detected in the image.")
+
+    idx = table_index or 0
+    if idx < 0 or idx >= len(tables):
+        raise HTTPException(
+            status_code=400,
+            detail=f"table_index {idx} out of range (found {len(tables)} table(s))."
+        )
+
+    df = tables[idx]
+    table_name = sanitize_table_name(filename.rsplit('.', 1)[0])
+    result = store_dataframe(df, table_name, filename, 'image', project_id)
+    result['tables_found'] = len(tables)
+    result['table_index'] = idx
+    return result
+
 @router.get("/ingest/sheets")
 async def get_excel_sheets(file: UploadFile = File(...)):
     content = await file.read()

@@ -1,82 +1,95 @@
 # Prism — AI Data Workspace
 
-A production-grade natural language data query tool for professionals.
+Query your data in plain English. No SQL required.
 
-## Features
-- **Multi-format import** — CSV, Excel (.xlsx), JSON, URL, Google Sheets
-- **NL → SQL** — Ask questions in plain English
-- **Column Profiler** — Data quality scores, null analysis, statistics
-- **Auto Chart Suggestions** — AI picks the best chart for your data
-- **Multi-table JOIN detection** — Query across multiple datasets
-- **Save & organize** — Projects and saved queries
-- **LLM support** — Ollama (local), OpenAI, Anthropic
+![Prism Dashboard](docs/screenshots/dashboard.png)
+
+---
+
+## What it does
+
+Upload a CSV, connect a database, or link a Google Sheet — then ask questions like:
+
+> *"Show total revenue by region"*
+> *"Which countries have water access below 60%?"*
+> *"Top 10 customers by lifetime value"*
+
+Prism converts your question to SQL, runs it, and returns results as a table, chart, or interactive map.
+
+---
+
+## Key Features
+
+- **Any data source** — CSV, Excel, JSON, Google Sheets, MySQL, image OCR
+- **Natural language queries** — powered by Ollama (free, local) or OpenAI/Anthropic
+- **Map visualization** — choropleth world maps, bubble maps, point maps
+- **Data quality profiler** — null analysis, statistics, quality scores
+- **Export anywhere** — download results as Excel or CSV
+
+---
 
 ## Quick Start
 
-Prism has two parts: a **FastAPI backend** (Python) and a **React frontend** (Vite). Install both once, then run together.
-
-### 1. Backend (Python ≥ 3.10)
+**Prerequisites:** Python 3.10+, Node.js 18+, [Ollama](https://ollama.com/download)
 
 ```bash
-cd Prism-Data-Workspace/backend
-pip install -r requirements.txt
+# 1. Clone
+git clone https://github.com/YatorAlexKe/Prism-Data-Workspace.git
+cd Prism-Data-Workspace
 
-# Start Ollama (recommended local LLM)
+# 2. Backend
+cd backend
+python -m venv venv
+venv\Scripts\activate.bat          # Windows
+source venv/bin/activate            # Mac/Linux
+venv\Scripts\python.exe -m pip install -r requirements.txt
+
+# 3. Frontend
+cd ../frontend
+npm install && npm run build
+
+# 4. Pull a local LLM (free)
 ollama pull llama3.2
 
-# Run server
-# Windows
+# 5. Run
+cd ../backend
 venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
-
-# Mac/Linux
-venv/bin/python -m uvicorn main:app --reload --port 8000
 ```
 
-### 2. Frontend (Node.js ≥ 18)
+Open **http://localhost:8000**
 
-```bash
-cd Prism-Data-Workspace/frontend
-npm install
-```
-
-Two ways to run the UI:
-
-**Option A — Development mode (hot reload, two processes)**
-```bash
-# Terminal 1: backend (from step 1)
-# Terminal 2:
-cd Prism-Data-Workspace/frontend
-npm run dev
-```
-Open **http://localhost:5173**. Vite proxies `/api/*` requests to the FastAPI server on `:8000`, so both must be running.
-
-**Option B — Production mode (single origin, one process)**
-```bash
-cd Prism-Data-Workspace/frontend
-npm run build
-```
-This emits a static bundle to `frontend/dist/`. The FastAPI server picks it up automatically — just run the backend and open **http://localhost:8000**. Re-run `npm run build` whenever you change the frontend.
-
-### Frontend architecture
-- **Vite + React 18 + React Router 6** — SPA shell with client-side routing
-- **AppContext** (`frontend/src/AppContext.jsx`) — shared workspace state (selected tables, datasets, query results, LLM config)
-- **`frontend/src/api.js`** — single source of truth for the API base URL (defaults to `/api`; override with `VITE_API_BASE` env var)
-- **CSS preserved as-is** from the original vanilla build — see `frontend/src/css/`
+---
 
 ## Sample Datasets
-- `docs/sample_datasets/sales_data.csv` — 200 sales orders
-- `docs/sample_datasets/customers.json` — 100 customers
 
-## API Endpoints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/ingest/file` | Upload CSV/Excel/JSON |
-| POST | `/api/ingest/url` | Import from URL |
-| POST | `/api/query` | NL → SQL query |
-| POST | `/api/query/multi-table` | Multi-table query |
-| POST | `/api/query/fix-sql` | Fix broken SQL |
-| GET  | `/api/profile/{table}` | Column profiler |
-| GET  | `/api/datasets` | List datasets |
-| GET  | `/api/projects` | List projects |
-| POST | `/api/queries/save` | Save a query |
-| GET  | `/api/query/history` | Query history |
+Three datasets included in `docs/sample_datasets/` to get started immediately:
+
+| File | Description |
+|------|-------------|
+| `sales_data.csv` | 200 sales orders by region and product |
+| `customers.json` | 100 customers with country and spend data |
+| `global_water_access.csv` | 61 countries with coordinates and water access % |
+
+---
+
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Setup Guide](docs/SETUP.md) | Detailed installation and configuration |
+| [API Reference](docs/API.md) | All endpoints with request/response examples |
+| [Google Sheets](docs/GOOGLE_SHEETS.md) | Service account setup and usage |
+| [MySQL Connections](docs/MYSQL.md) | Connecting live databases securely |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common errors and fixes |
+| [Contributing](CONTRIBUTING.md) | Branching strategy and development workflow |
+| [Security](SECURITY.md) | Security model and credential handling |
+
+---
+
+## Built With
+
+Python · FastAPI · React · SQLite · Plotly · Ollama · Pandas
+
+---
+
+*MIT License*

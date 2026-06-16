@@ -270,7 +270,8 @@ class ExportRequest(BaseModel):
     sql: str
     table_name: str
     filename: Optional[str] = "prism_export"
-    format: Optional[str] = "xlsx"  # xlsx or csv
+    format: Optional[str] = "xlsx"
+    connection_id: Optional[int] = None  # xlsx or csv
 
 @router.post("/query/export")
 async def export_results(req: ExportRequest):
@@ -280,13 +281,40 @@ async def export_results(req: ExportRequest):
     if not valid:
         raise HTTPException(status_code=400, detail=f"SQL validation failed: {reason}")
 
-    conn = get_connection()
-    try:
-        df = pd.read_sql_query(req.sql, conn)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Query error: {str(e)}")
-    finally:
-        conn.close()
+    # Check if this is a MySQL connection export
+    if req.connection_id:
+        try:
+            from utils.mysql_connector import get_connection as get_mysql_conn, decrypt_password
+            from utils.db import get_connection as get_prism_db
+            prism_conn = get_prism_db()
+            cursor = prism_conn.execute(
+                "SELECT * FROM db_connections WHERE id=?", (req.connection_id,)
+            )
+            details = cursor.fetchone()
+            prism_conn.close()
+            if not details:
+                raise HTTPException(status_code=404, detail="Connection not found.")
+            password = decrypt_password(details['encrypted_password'])
+            mysql_conn = get_mysql_conn(
+                details['host'], details['port'],
+                details['database_name'], details['username'], password
+            )
+            try:
+                df = pd.read_sql_query(req.sql, mysql_conn)
+            finally:
+                mysql_conn.close()
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Query error: {str(e)}")
+    else:
+        conn = get_connection()
+        try:
+            df = pd.read_sql_query(req.sql, conn)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Query error: {str(e)}")
+        finally:
+            conn.close()
 
     filename = req.filename.strip() or "prism_export"
 

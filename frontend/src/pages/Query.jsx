@@ -211,6 +211,10 @@ useEffect(() => {
           table_name: currentTable,
           filename: `prism_${currentTable}_${new Date().toISOString().split('T')[0]}`,
           format,
+          connection_id: (() => {
+            const ctx = sessionStorage.getItem('mysql_connection');
+            return ctx ? JSON.parse(ctx).connection_id : null;
+          })()
         }),
       });
       if (!res.ok) {

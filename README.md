@@ -88,7 +88,11 @@ Three datasets included in `docs/sample_datasets/` to get started immediately:
 
 ## Built With
 
-Python · FastAPI · React · SQLite · Plotly · Ollama · Pandas
+**Backend:** Python · FastAPI · SQLite · Pandas · PyMySQL · img2table · Pytesseract · OpenCV · Google APIs · Cryptography
+
+**Frontend:** React 18 · Vite · React Router · Plotly.js
+
+**LLM:** Ollama · OpenAI API · Anthropic API
 
 ---
 

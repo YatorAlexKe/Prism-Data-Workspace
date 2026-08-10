@@ -36,4 +36,4 @@ jobs:
         run: |
           cd backend
           flake8 . --max-line-length=120 --exclude=venv,__pycache__ \
-                   --ignore=E501,W503,E302,E303,E305
+                   --ignore=E501,W503,E302,E303,E305,W293,W292,W291

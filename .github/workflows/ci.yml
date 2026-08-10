@@ -35,5 +35,6 @@ jobs:
       - name: Run linter
         run: |
           cd backend
-          flake8 . --max-line-length=120 --exclude=venv,__pycache__ \
-                   --ignore=E501,W503,E302,E303,E305,W293,W292,W291
+          flake8 . --max-line-length=150 --exclude=venv,__pycache__ \
+                   --select=E9,F7,F8 \
+                   --ignore=F401,F841

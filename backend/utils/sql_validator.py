@@ -22,7 +22,7 @@ def validate_sql(sql: str):
         return False, "Only SELECT queries are allowed."
     for pattern in BLOCKED_PATTERNS:
         if re.search(pattern, upper, re.IGNORECASE):
-            return False, f"Blocked SQL operation detected."
+            return False, "Blocked SQL operation detected."
     if sql.count(';') > 1 or (sql.count(';') == 1 and not sql.strip().endswith(';')):
         return False, "Multiple SQL statements are not allowed."
     return True, "OK"

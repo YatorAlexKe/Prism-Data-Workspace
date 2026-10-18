@@ -15,6 +15,7 @@ import './css/pages/query.css';
 import './css/pages/profile.css';
 import './css/pages/projects.css';
 import './css/pages/history.css';
+import './css/pages/welcome.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

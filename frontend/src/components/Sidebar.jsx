@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from '../AppContext.jsx';
 
 // Sidebar navigation + datasets list. Same DOM/class structure as the vanilla
@@ -19,10 +19,10 @@ export default function Sidebar() {
 
   return (
     <div className="sidebar">
-      <div className="sidebar-logo">
+      <Link to="/" className="sidebar-logo" title="Back to the welcome screen">
         <div className="logo-mark">P</div>
         <div className="logo-text">Pri<span>sm</span></div>
-      </div>
+      </Link>
 
       <nav className="sidebar-nav">
         <div className="nav-section-label">Workspace</div>

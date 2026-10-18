@@ -1,0 +1,402 @@
+/* ── WELCOME ──
+   Full-screen scene at "/". Mobile-first "stacked" layout (scene above, copy
+   below); the "wide" layout puts the copy in a left column. The wide media
+   query must match WIDE_QUERY in pages/Welcome.jsx so the 3D framing and the
+   DOM agree. */
+
+.welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+}
+
+.welcome-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  animation: welcome-fade 1.2s ease-out 0.1s forwards;
+}
+
+.welcome-fallback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 58%;
+}
+
+/* Legibility + atmosphere: darken where the copy sits, vignette the edges,
+   and a whisper of film grain. */
+.welcome-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to top, rgba(13, 15, 20, 0.96) 0%, rgba(13, 15, 20, 0.82) 34%, rgba(13, 15, 20, 0) 62%),
+    radial-gradient(ellipse 120% 90% at 50% 32%, transparent 45%, rgba(13, 15, 20, 0.8) 100%);
+}
+
+.welcome-vignette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── top bar ── */
+.welcome-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 16px;
+  z-index: 3;
+}
+
+.welcome-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.welcome-skip {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: rgba(20, 23, 32, 0.5);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(8px);
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.welcome-skip:hover {
+  color: var(--text);
+  border-color: var(--border2);
+}
+
+.welcome kbd {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  color: var(--muted);
+}
+
+/* ── copy column ── */
+.welcome-copy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 16px max(28px, env(safe-area-inset-bottom));
+  z-index: 2;
+  max-height: 64%;
+  overflow-y: auto;
+}
+
+.welcome-copy > * {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.welcome.is-revealed .welcome-copy > * {
+  opacity: 1;
+  transform: none;
+}
+
+.welcome.is-revealed .welcome-copy > :nth-child(2) { transition-delay: 0.08s; }
+.welcome.is-revealed .welcome-copy > :nth-child(3) { transition-delay: 0.18s; }
+.welcome.is-revealed .welcome-copy > :nth-child(4) { transition-delay: 0.28s; }
+.welcome.is-revealed .welcome-copy > :nth-child(5) { transition-delay: 0.36s; }
+.welcome.is-revealed .welcome-copy > :nth-child(6) { transition-delay: 0.44s; }
+
+.welcome-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.welcome-title {
+  font-size: clamp(30px, 8vw, 46px);
+  line-height: 1.04;
+  font-weight: 300;
+  letter-spacing: -0.025em;
+  margin-bottom: 14px;
+  text-wrap: balance;
+}
+
+.welcome-accent {
+  font-weight: 500;
+  background: linear-gradient(92deg, #fb923c 0%, #fbbf24 22%, #4ade80 45%, #60a5fa 72%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.welcome-lede {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #a3adc2;
+  max-width: 46ch;
+  margin-bottom: 22px;
+}
+
+/* ── call to action ── */
+.welcome-primary {
+  display: inline-block;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: #0b0d12;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  border-radius: 12px;
+  padding: 14px 24px;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 10px 40px rgba(74, 222, 128, 0.18);
+  transition: filter 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.welcome-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 12px 48px rgba(96, 165, 250, 0.28);
+  transform: translateY(-1px);
+}
+
+.welcome a:focus-visible,
+.welcome button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+/* ── projected labels ── */
+.welcome-labels,
+.welcome-outputs {
+  position: absolute;
+  inset: 0;
+  list-style: none;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.welcome-label,
+.welcome-output {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+  transition: opacity 0.6s ease;
+}
+
+.welcome-label[data-visible='0'],
+.welcome-output[data-visible='0'] {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.welcome-label[data-front='0'] {
+  opacity: 0.5;
+}
+
+.welcome-label button {
+  pointer-events: auto;
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, 2px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 0;
+  padding: 4px 6px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.welcome-label-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 150px;
+  font-family: var(--mono);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(13, 15, 20, 0.55);
+  border: 1px solid color-mix(in srgb, var(--c) 30%, transparent);
+  backdrop-filter: blur(6px);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.welcome-label-name::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 8px var(--c);
+  flex-shrink: 0;
+}
+
+.welcome-label-meta {
+  display: none;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: #a3adc2;
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(13, 15, 20, 0.8);
+}
+
+.welcome-label button:hover .welcome-label-name,
+.welcome-label button:focus-visible .welcome-label-name {
+  border-color: var(--c);
+  background: rgba(20, 23, 32, 0.85);
+}
+
+.welcome-label button:hover .welcome-label-meta,
+.welcome-label button:focus-visible .welcome-label-meta {
+  display: block;
+}
+
+.welcome-output {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--c);
+  opacity: 0.8;
+  text-shadow: 0 0 12px var(--c);
+}
+
+/* The projected anchor is already just below the glyph. */
+.welcome-output > span {
+  position: absolute;
+  transform: translate(-50%, 6px);
+  white-space: nowrap;
+}
+
+/* ── fallback chips ── */
+.welcome-sources-static {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 26px;
+}
+
+.welcome-sources-static li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.welcome-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+@keyframes welcome-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── wide layout ── keep in sync with WIDE_QUERY */
+@media (min-width: 900px) and (min-aspect-ratio: 5/4), (max-height: 520px) and (min-aspect-ratio: 5/4) {
+  .welcome-vignette {
+    background:
+      linear-gradient(90deg, rgba(13, 15, 20, 0.9) 0%, rgba(13, 15, 20, 0.6) 26%, rgba(13, 15, 20, 0) 46%),
+      radial-gradient(ellipse 85% 100% at 63% 50%, transparent 50%, rgba(13, 15, 20, 0.85) 100%);
+  }
+
+  .welcome-top {
+    padding: 24px clamp(24px, 4vw, 48px);
+  }
+
+  .welcome-copy {
+    top: 50%;
+    bottom: auto;
+    right: auto;
+    transform: translateY(-50%);
+    width: min(34vw, 500px);
+    max-height: none;
+    overflow: visible;
+    padding: 0 0 0 clamp(24px, 5vw, 80px);
+    box-sizing: content-box;
+  }
+
+  .welcome-title {
+    font-size: clamp(40px, 4.4vw, 66px);
+  }
+
+  .welcome-fallback {
+    left: auto;
+    right: 0;
+    width: 68%;
+    height: 100%;
+  }
+}
+
+/* Short landscape screens (phones on their side): tighten the copy. */
+@media (max-height: 520px) and (min-aspect-ratio: 5/4) {
+  .welcome-title { font-size: 30px; margin-bottom: 8px; }
+  .welcome-eyebrow { margin-bottom: 8px; }
+  .welcome-lede { font-size: 13px; margin-bottom: 14px; }
+  .welcome-primary { padding: 11px 18px; font-size: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-canvas {
+    animation: none;
+    opacity: 1;
+  }
+
+  .welcome-copy > * {
+    transition: none;
+    transform: none;
+  }
+
+  .welcome-label,
+  .welcome-output {
+    transition: none;
+  }
+}

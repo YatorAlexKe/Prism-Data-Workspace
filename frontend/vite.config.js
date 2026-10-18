@@ -18,5 +18,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    // three.js (~530 kB min, ~135 kB gzip) is its own lazy chunk, loaded
+    // only by the welcome scene; don't warn about it.
+    chunkSizeWarningLimit: 600,
   },
 });

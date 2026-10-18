@@ -106,35 +106,4 @@ Three datasets included in `docs/sample_datasets/` to get started immediately:
 
 ---
 
-## Capstone Project
-
-**Course:** CMP1979 — Modern Software Development
-**Team:** NorthShield Analysts
-**Institution:** Cambrian College
-
-### Team Members
-- Alex Yator (A00335392) — Team Leader
-- Audrey Goudi (A00292758)
-- Cherylpreet Bansal (A00336894)
-
-### How to Run Automated Tests
-
-```bash
-cd backend
-venv\Scripts\python.exe tests/test_prism.py   # Windows
-venv/bin/python tests/test_prism.py            # Mac/Linux
-```
-
-Expected output: 13/13 passed
-
----
-
-### Project Links
-
-- [Shared Word Report](https://mycambrian-my.sharepoint.com/:w:/r/personal/a00336894_mycambrian_ca/_layouts/15/Doc.aspx?sourcedoc=%7B1677D581-26A2-435E-A588-7C8C0744E5AC%7D&file=CMP1979-CapstoneFinalReport-NorthshieldAnalysts-CORRECTED.docx&action=default&mobileredirect=true&wdOrigin=APPHOME-WEB.DIRECT%2CAPPHOME-WEB.BANNER.UPLOAD&wdPreviousSession=4b359d43-0ef2-49f3-9281-281e02e6079d&wdPreviousSessionSrc=AppHomeWeb&ct=1786334677975&isSPOFile=1&xsdata=MDV8MDJ8fGIwOGZlNDhlM2UxNzRjNzBlZGU4MDhkZWY3MTMzMmY4fGE2YTc4ZDZjNzk5YTQzYmE4MjFhZDVhMWY1ZjBmNzY3fDB8MHw2MzkyMTk4NTg5NjQ4MDMwNDh8VW5rbm93bnxWR1ZoYlhOVFpXTjFjbWwwZVZObGNuWnBZMlY4ZXlKRFFTSTZJbFJsWVcxelgwRlVVRk5sY25acFkyVmZVMUJQVEU5R0lpd2lWaUk2SWpBdU1DNHdNREF3SWl3aVVDSTZJbGRwYmpNeUlpd2lRVTRpT2lKUGRHaGxjaUlzSWxkVUlqb3hNWDA9fDF8TDJOb1lYUnpMekU1T21Wall6QXpPRGhsWm1aaU5UUTVNemxoT0RVMU9Ea3hZakZsTjJVek5tVXpRSFJvY21WaFpDNTJNaTl0WlhOellXZGxjeTh4TnpnMk16ZzVNRGswTmpjd3w0YWI1YTBiZTAyZGM0ZDJhOGJhYzA4ZGVmNzEzMzJmNnxhYjIxMjJhNzY0ZWM0YWU3YTA5YzRjZWQ2NGQwY2U4Nw%3D%3D&sdata=bmVaZDhGcmhpdTlkOHBkOVhjUmNmaTVDT2VjbGdGQ3hzcnZUQXJXRTIyaz0%3D&ovuser=a6a78d6c-799a-43ba-821a-d5a1f5f0f767%2CA00335392%40mycambrian.ca)
-
-- [Azure DevOps Board](https://dev.azure.com/PrismCapstone/PRISM%20WORKSPACE/_workitems/recentlyupdated/)
-
----
-
 *MIT License*

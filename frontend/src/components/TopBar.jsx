@@ -62,6 +62,11 @@ export default function TopBar() {
         </select>
         {showPicker ? (
           <ModelPicker models={ollama.models} value={llmModel || ollama.default} onChange={setLlmModel} />
+        ) : llmProvider === 'ollama' && ollama === null ? (
+          // Asking Ollama which models are installed; same control, so the bar doesn't jump.
+          <select title="Local model" disabled style={{ maxWidth: 320 }}>
+            <option>Loading models…</option>
+          </select>
         ) : (
           <input
             type="text"

@@ -59,7 +59,8 @@ cd ../frontend
 npm install && npm run build
 
 # 4. Pull a local LLM (free)
-ollama pull llama3.2
+ollama pull qwen2.5-coder:7b     # default: most accurate (~4.7 GB, ~6 GB RAM)
+ollama pull llama3.2             # optional lighter model (~2 GB)
 
 # 5. Run
 cd ../backend

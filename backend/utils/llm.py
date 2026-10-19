@@ -1,5 +1,6 @@
 import os
 import json
+import urllib.error
 import urllib.request
 
 def build_schema_context(table_name: str, columns: list) -> str:
@@ -56,7 +57,37 @@ ERROR MESSAGE:
 
 Return ONLY the fixed SQL query, no explanation, no markdown."""
 
-def _call_ollama(prompt: str, model: str = "llama3.2", system: str = None, json_schema: dict = None) -> str:
+OLLAMA_URL = "http://localhost:11434"
+
+# Local models Prism knows about. qwen2.5-coder:7b scored best on
+# backend/evals (98% vs 91% for llama3.2); llama3.2 needs about half the RAM.
+# PRISM_OLLAMA_MODEL overrides the default.
+KNOWN_OLLAMA_MODELS = {
+    "qwen2.5-coder:7b": "recommended",
+    "llama3.2": "lighter",
+}
+DEFAULT_OLLAMA_MODEL = os.getenv("PRISM_OLLAMA_MODEL", "qwen2.5-coder:7b")
+
+
+class LLMUnavailable(Exception):
+    """The model can't be reached; the message says how to fix it."""
+
+
+def list_ollama_models() -> list:
+    """Installed Ollama models: [{"name", "size_gb", "parameters"}]."""
+    try:
+        with urllib.request.urlopen(f"{OLLAMA_URL}/api/tags", timeout=5) as resp:
+            models = json.loads(resp.read()).get("models", [])
+    except (urllib.error.URLError, OSError):
+        raise LLMUnavailable("Ollama isn't running. Start the Ollama app, or run: ollama serve")
+    return [{
+        "name": m["name"].removesuffix(":latest"),
+        "size_gb": round(m.get("size", 0) / 1e9, 1),
+        "parameters": (m.get("details") or {}).get("parameter_size"),
+    } for m in models]
+
+
+def _call_ollama(prompt: str, model: str = DEFAULT_OLLAMA_MODEL, system: str = None, json_schema: dict = None) -> str:
     messages = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}]
     body = {
         "model": model,
@@ -68,13 +99,20 @@ def _call_ollama(prompt: str, model: str = "llama3.2", system: str = None, json_
         # Ollama constrains decoding to this schema (structured outputs).
         body["format"] = json_schema
     req = urllib.request.Request(
-        "http://localhost:11434/api/chat",
+        f"{OLLAMA_URL}/api/chat",
         data=json.dumps(body).encode(),
         headers={"Content-Type": "application/json"},
         method="POST"
     )
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        return json.loads(resp.read()).get("message", {}).get("content", "").strip()
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            return json.loads(resp.read()).get("message", {}).get("content", "").strip()
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            raise LLMUnavailable(f"The Ollama model '{model}' isn't installed. Run: ollama pull {model}")
+        raise
+    except urllib.error.URLError:
+        raise LLMUnavailable("Ollama isn't running. Start the Ollama app, or run: ollama serve")
 
 def _call_openai(prompt: str, api_key: str, model: str = "gpt-4o-mini", system: str = None) -> str:
     messages = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}]
@@ -123,7 +161,7 @@ def call_llm(prompt: str, provider: str = "ollama", api_key: str = None, model: 
     instructions through the prompt and callers parse tolerantly.
     """
     if provider == "ollama":
-        return _call_ollama(prompt, model or "llama3.2", system, json_schema)
+        return _call_ollama(prompt, model or DEFAULT_OLLAMA_MODEL, system, json_schema)
     elif provider == "openai":
         return _call_openai(prompt, api_key or os.getenv("OPENAI_API_KEY", ""), model or "gpt-4o-mini", system)
     elif provider == "anthropic":

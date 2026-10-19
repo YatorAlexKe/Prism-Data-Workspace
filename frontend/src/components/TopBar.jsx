@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { PAGE_TITLES } from '../api.js';
+import { API, PAGE_TITLES } from '../api.js';
 import { useApp } from '../AppContext.jsx';
 import BackButton from './BackButton.jsx';
 
@@ -15,10 +16,23 @@ export default function TopBar() {
 
   const { llmProvider, setLlmProvider, llmModel, setLlmModel, llmApiKey, setLlmApiKey } = useApp();
 
+  // Installed Ollama models for the picker: {available, default, models, error}.
+  const [ollama, setOllama] = useState(null);
+  useEffect(() => {
+    if (llmProvider !== 'ollama') return;
+    let cancelled = false;
+    fetch(`${API}/llm/models`)
+      .then(r => r.json())
+      .then(d => { if (!cancelled) setOllama(d); })
+      .catch(() => { if (!cancelled) setOllama({ available: false, models: [] }); });
+    return () => { cancelled = true; };
+  }, [llmProvider]);
+
   const modelPlaceholder =
     llmProvider === 'openai' ? 'gpt-4o-mini'
     : llmProvider === 'anthropic' ? 'claude-haiku-4-5-20251001'
-    : 'llama3.2';
+    : 'qwen2.5-coder:7b';
+  const showPicker = llmProvider === 'ollama' && ollama?.available && ollama.models.some(m => m.installed);
 
   return (
     <div className="topbar">
@@ -46,13 +60,18 @@ export default function TopBar() {
           <option value="openai">OpenAI</option>
           <option value="anthropic">Anthropic</option>
         </select>
-        <input
-          type="text"
-          value={llmModel}
-          onChange={e => setLlmModel(e.target.value)}
-          placeholder={modelPlaceholder}
-          style={{ width: 100 }}
-        />
+        {showPicker ? (
+          <ModelPicker models={ollama.models} value={llmModel || ollama.default} onChange={setLlmModel} />
+        ) : (
+          <input
+            type="text"
+            value={llmModel}
+            onChange={e => setLlmModel(e.target.value)}
+            placeholder={modelPlaceholder}
+            title={llmProvider === 'ollama' && ollama?.error ? ollama.error : 'Model name'}
+            style={{ width: 130 }}
+          />
+        )}
         {llmProvider !== 'ollama' && (
           <input
             type="password"
@@ -64,5 +83,24 @@ export default function TopBar() {
         )}
       </div>
     </div>
+  );
+}
+
+// Ollama models: installed ones are selectable; known-but-missing ones are
+// listed disabled with the command that installs them.
+function ModelPicker({ models, value, onChange }) {
+  const known = models.some(m => m.name === value);
+  return (
+    <select title="Local model" value={value} onChange={e => onChange(e.target.value)} style={{ maxWidth: 320 }}>
+      {!known && <option value={value}>{value}</option>}
+      {models.map(m => (
+        <option key={m.name} value={m.name} disabled={!m.installed}>
+          {m.name}
+          {m.installed && m.parameters ? ` · ${m.parameters}` : ''}
+          {m.tag ? ` · ${m.tag}` : ''}
+          {!m.installed ? ` · not installed (${m.pull})` : ''}
+        </option>
+      ))}
+    </select>
   );
 }

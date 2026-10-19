@@ -43,9 +43,18 @@ npm run build
 
 **Option A — Ollama (free, local, recommended)**
 ```bash
-ollama pull llama3.2
+ollama pull qwen2.5-coder:7b     # default model: most accurate (~4.7 GB download, ~6 GB RAM)
+ollama pull llama3.2             # optional: lighter (~2 GB) for machines with less RAM
 # Ollama starts automatically on localhost:11434
 ```
+
+Switch models any time from the model picker in the top bar; it lists the models
+Ollama has installed. To change the server's default, set `PRISM_OLLAMA_MODEL`
+(e.g. `PRISM_OLLAMA_MODEL=llama3.2`). Accuracy for each model can be measured
+with `backend/evals` (qwen2.5-coder:7b 98%, llama3.2 91% on the bundled questions).
+
+To keep models off a full system drive, set `OLLAMA_MODELS` to another folder
+(e.g. `D:\Ollama\models`) and restart Ollama before pulling.
 
 **Option B — OpenAI**
 ```bash

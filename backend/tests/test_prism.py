@@ -167,6 +167,32 @@ def test_fix_date_like():
     assert fix_date_like("WHERE name LIKE '%display%'") == "WHERE name LIKE '%display%'"
     assert fix_date_like("WHERE d LIKE '2024%'") == "WHERE d LIKE '2024%'"
 
+def test_ollama_errors_are_actionable():
+    """Missing model / Ollama down produce messages that say how to fix it."""
+    import io, urllib.error
+    import utils.llm as llm
+    original = llm.urllib.request.urlopen
+    try:
+        def missing(*a, **k):
+            raise urllib.error.HTTPError('u', 404, 'not found', {}, io.BytesIO(b''))
+        llm.urllib.request.urlopen = missing
+        try:
+            llm.call_llm("hi", "ollama", model="qwen2.5-coder:7b")
+            assert False, "expected LLMUnavailable"
+        except llm.LLMUnavailable as e:
+            assert "ollama pull qwen2.5-coder:7b" in str(e)
+
+        def down(*a, **k):
+            raise urllib.error.URLError('refused')
+        llm.urllib.request.urlopen = down
+        try:
+            llm.list_ollama_models()
+            assert False, "expected LLMUnavailable"
+        except llm.LLMUnavailable as e:
+            assert "isn't running" in str(e)
+    finally:
+        llm.urllib.request.urlopen = original
+
 def test_pipeline_repairs_execution_error():
     """A failing first query gets one repair attempt with the DB error."""
     import sqlite3
@@ -198,7 +224,8 @@ if __name__ == '__main__':
              test_schema_question_detection,test_numeric_text_coerced_on_import,
              test_decimal_comma_vs_thousands,
              test_describe_table_grounds_values,test_parse_model_output,
-             test_fix_date_like,test_pipeline_repairs_execution_error]
+             test_fix_date_like,test_ollama_errors_are_actionable,
+             test_pipeline_repairs_execution_error]
     passed = 0
     for t in tests:
         try:

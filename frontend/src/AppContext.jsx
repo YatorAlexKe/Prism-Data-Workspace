@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { API } from './api.js';
 
 // Replaces the vanilla globals from frontend/js/state.js. One context so any
@@ -16,10 +16,14 @@ export function AppProvider({ children }) {
   const [chartSuggestion, setChartSuggestion] = useState(null);
   const [historyCount, setHistoryCount] = useState(0);
 
-  // LLM picker (was previously bound to topbar inputs via getLLMConfig())
-  const [llmProvider, setLlmProvider] = useState('ollama');
-  const [llmModel, setLlmModel] = useState('');
+  // LLM picker (topbar). Provider and model are remembered between visits;
+  // the API key deliberately is not. An empty model means "server default".
+  const [llmProvider, setLlmProvider] = useState(() => readPref('prism:llm-provider', 'ollama'));
+  const [llmModel, setLlmModel] = useState(() => readPref('prism:llm-model', ''));
   const [llmApiKey, setLlmApiKey] = useState('');
+
+  useEffect(() => { writePref('prism:llm-provider', llmProvider); }, [llmProvider]);
+  useEffect(() => { writePref('prism:llm-model', llmModel); }, [llmModel]);
 
   const getLLMConfig = useCallback(() => ({
     provider: llmProvider,
@@ -64,6 +68,14 @@ export function AppProvider({ children }) {
     loadHistoryCount,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+}
+
+function readPref(key, fallback) {
+  try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
+}
+
+function writePref(key, value) {
+  try { localStorage.setItem(key, value); } catch { /* storage blocked: preference just isn't kept */ }
 }
 
 export function useApp() {

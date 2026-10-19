@@ -5,11 +5,12 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils.db import get_connection as get_prism_db, init_db
 from utils.mysql_connector import (
-    test_connection, get_schema, execute_query,
+    test_connection, get_schema, get_connection as get_mysql_conn,
     encrypt_password, decrypt_password
 )
-from utils.sql_validator import validate_sql, extract_sql_from_response
-from utils.llm import build_prompt, generate_sql
+from utils.nl2sql import answer, mysql_runner, NLQueryError
+
+DISPLAY_ROWS = 1000  # same cap as routers/query.py; export still returns everything
 
 router = APIRouter()
 
@@ -182,38 +183,42 @@ async def query_connection(req: ConnectionQuery):
     if not table:
         raise HTTPException(status_code=404, detail="Table not found.")
 
-    # Build schema context
-    schema_context = f"Table: {req.table_name}\nColumns:\n"
-    for col in table['columns']:
-        schema_context += f"  {col['name']} ({col['type']})\n"
-
-    # Generate SQL
-    prompt = build_prompt(schema_context, req.question)
+    # One read-only connection for describing the table, generating and running the query.
     try:
-        raw_sql = generate_sql(prompt, req.provider or "ollama", req.api_key, req.model)
-    except Exception as e:
-        raise HTTPException(status_code=503, detail=f"LLM error: {str(e)}")
-
-    sql = extract_sql_from_response(raw_sql)
-
-    # Validate
-    valid, reason = validate_sql(sql)
-    if not valid:
-        raise HTTPException(status_code=400, detail=f"SQL validation failed: {reason}")
-
-    # Execute on MySQL
-    try:
-        result = execute_query(
-            details['host'], details['port'],
-            details['database_name'], details['username'], password, sql
-        )
+        mconn = get_mysql_conn(details['host'], details['port'],
+                               details['database_name'], details['username'], password)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Query error: {str(e)}")
+    try:
+        run = mysql_runner(mconn)
+        out = answer(req.question, [{"table_name": req.table_name, "columns": table['columns']}],
+                     run, 'mysql', req.provider or "ollama", req.api_key, req.model,
+                     cache_key=f"mysql:{req.connection_id}", max_rows=DISPLAY_ROWS)
+        total = len(out["rows"])
+        if out["truncated"]:
+            try:
+                total = run(f"SELECT COUNT(*) FROM ({out['sql']}) AS q")[1][0][0]
+            except Exception:
+                total = None
+    except NLQueryError as e:
+        raise HTTPException(status_code=503 if e.stage == 'llm' else 400, detail=e.message)
+    finally:
+        mconn.close()
 
+    rows = [dict(zip(out["columns"], r)) for r in out["rows"]]
+    result = {
+        "columns": [{"name": n, "type": "text"} for n in out["columns"]] if rows else [],
+        "rows": rows,
+        "row_count": len(rows),
+        "truncated": out["truncated"],
+        "total_count": total,
+    }
     return {
         "question": req.question,
-        "sql": sql,
-        "schema": schema_context,
+        "sql": out["sql"],
+        "interpretation": out["interpretation"],
+        "repaired": bool(out["attempts"]),
+        "schema": out["schema"],
         "result": result,
         "source": "mysql",
         "connection": details['name']

@@ -6,6 +6,7 @@ from utils.db import get_connection, init_db
 from utils.ingestion import parse_csv, parse_excel, parse_json, parse_url, clean_dataframe, get_schema
 from utils.profiler import profile_dataframe
 from utils.sql_validator import sanitize_table_name
+from utils.nl2sql import invalidate_description
 
 router = APIRouter()
 
@@ -26,6 +27,7 @@ def store_dataframe(df, table_name, filename, source_type, project_id=None, sour
         conn.commit()
     finally:
         conn.close()
+    invalidate_description(table_name)  # re-import replaces the table
     
     return {
         "table_name": table_name,

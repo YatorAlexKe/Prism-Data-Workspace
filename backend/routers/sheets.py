@@ -4,8 +4,10 @@ from typing import Optional
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils.db import get_connection, init_db
-from utils.sql_validator import sanitize_table_name, sanitize_column_name
+from utils.sql_validator import sanitize_table_name
 from utils.sheets import read_sheet, write_sheet
+from utils.ingestion import clean_dataframe, get_schema
+from utils.nl2sql import invalidate_description
 
 router = APIRouter()
 
@@ -32,13 +34,9 @@ async def import_from_sheets(req: SheetImportRequest):
     if df.empty:
         raise HTTPException(status_code=400, detail="Sheet is empty.")
 
-    df.columns = [sanitize_column_name(c) for c in df.columns]
-
-    for col in df.columns:
-        try:
-            df[col] = df[col].apply(lambda x: float(x) if x != '' else None)
-        except (ValueError, TypeError):
-            pass
+    # Same cleaning as file uploads: sanitized/deduped names, blanks as
+    # missing, numeric text ("$1,234", "45%") converted to numbers.
+    df = clean_dataframe(df)
 
     table_name = sanitize_table_name(f"sheet_{req.url.split('/')[-2][:20]}")
 
@@ -54,8 +52,9 @@ async def import_from_sheets(req: SheetImportRequest):
         conn.commit()
     finally:
         conn.close()
+    invalidate_description(table_name)
 
-    schema = [{"name": c, "type": "text"} for c in df.columns]
+    schema = get_schema(df, table_name)
 
     return {
         "table_name": table_name,

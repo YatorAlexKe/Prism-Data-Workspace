@@ -17,21 +17,7 @@ def build_multi_schema_context(tables: list) -> str:
         parts.append('\n'.join(lines))
     return '\n\n'.join(parts)
 
-def build_prompt(schema_context: str, question: str) -> str:
-    return f"""You are a SQL expert for SQLite. Generate a SELECT query for the following question.
-
-SCHEMA:
-{schema_context}
-
-RULES:
-- Only SELECT statements allowed
-- Use only columns that exist in the schema
-- Alias all aggregations (e.g. COUNT(*) AS count)
-- Return ONLY the SQL query, no explanation, no markdown
-
-QUESTION: {question}
-
-SQL QUERY:"""
+# Question -> SQL prompting lives in utils/nl2sql.py.
 
 def build_chart_prompt(columns: list, sample_rows: list) -> str:
     col_info = ', '.join([f"{c['name']} ({c['type']})" for c in columns])
@@ -70,26 +56,31 @@ ERROR MESSAGE:
 
 Return ONLY the fixed SQL query, no explanation, no markdown."""
 
-def _call_ollama(prompt: str, model: str = "llama3.2") -> str:
-    payload = json.dumps({
+def _call_ollama(prompt: str, model: str = "llama3.2", system: str = None, json_schema: dict = None) -> str:
+    messages = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}]
+    body = {
         "model": model,
-        "prompt": prompt,
+        "messages": messages,
         "stream": False,
-        "options": {"temperature": 0.1}
-    }).encode()
+        "options": {"temperature": 0.1},
+    }
+    if json_schema:
+        # Ollama constrains decoding to this schema (structured outputs).
+        body["format"] = json_schema
     req = urllib.request.Request(
-        "http://localhost:11434/api/generate",
-        data=payload,
+        "http://localhost:11434/api/chat",
+        data=json.dumps(body).encode(),
         headers={"Content-Type": "application/json"},
         method="POST"
     )
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        return json.loads(resp.read()).get("response", "").strip()
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        return json.loads(resp.read()).get("message", {}).get("content", "").strip()
 
-def _call_openai(prompt: str, api_key: str, model: str = "gpt-4o-mini") -> str:
+def _call_openai(prompt: str, api_key: str, model: str = "gpt-4o-mini", system: str = None) -> str:
+    messages = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}]
     payload = json.dumps({
         "model": model,
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": messages,
         "temperature": 0.1,
         "max_tokens": 800
     }).encode()
@@ -102,12 +93,15 @@ def _call_openai(prompt: str, api_key: str, model: str = "gpt-4o-mini") -> str:
     with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read())["choices"][0]["message"]["content"].strip()
 
-def _call_anthropic(prompt: str, api_key: str, model: str = "claude-haiku-4-5-20251001") -> str:
-    payload = json.dumps({
+def _call_anthropic(prompt: str, api_key: str, model: str = "claude-haiku-4-5-20251001", system: str = None) -> str:
+    body = {
         "model": model,
         "max_tokens": 800,
         "messages": [{"role": "user", "content": prompt}]
-    }).encode()
+    }
+    if system:
+        body["system"] = system
+    payload = json.dumps(body).encode()
     req = urllib.request.Request(
         "https://api.anthropic.com/v1/messages",
         data=payload,
@@ -121,17 +115,20 @@ def _call_anthropic(prompt: str, api_key: str, model: str = "claude-haiku-4-5-20
     with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read())["content"][0]["text"].strip()
 
-def call_llm(prompt: str, provider: str = "ollama", api_key: str = None, model: str = None) -> str:
-    if provider == "ollama":
-        return _call_ollama(prompt, model or "llama3.2")
-    elif provider == "openai":
-        return _call_openai(prompt, api_key or os.getenv("OPENAI_API_KEY", ""), model or "gpt-4o-mini")
-    elif provider == "anthropic":
-        return _call_anthropic(prompt, api_key or os.getenv("ANTHROPIC_API_KEY", ""), model or "claude-haiku-4-5-20251001")
-    raise ValueError(f"Unknown provider: {provider}")
+def call_llm(prompt: str, provider: str = "ollama", api_key: str = None, model: str = None,
+             system: str = None, json_schema: dict = None) -> str:
+    """Single entry point for every provider.
 
-def generate_sql(prompt_text: str, provider: str = "ollama", api_key: str = None, model: str = None) -> str:
-    return call_llm(prompt_text, provider, api_key, model)
+    `json_schema` is enforced by Ollama; hosted providers get the same JSON
+    instructions through the prompt and callers parse tolerantly.
+    """
+    if provider == "ollama":
+        return _call_ollama(prompt, model or "llama3.2", system, json_schema)
+    elif provider == "openai":
+        return _call_openai(prompt, api_key or os.getenv("OPENAI_API_KEY", ""), model or "gpt-4o-mini", system)
+    elif provider == "anthropic":
+        return _call_anthropic(prompt, api_key or os.getenv("ANTHROPIC_API_KEY", ""), model or "claude-haiku-4-5-20251001", system)
+    raise ValueError(f"Unknown provider: {provider}")
 
 def suggest_chart(columns: list, sample_rows: list, provider: str = "ollama", api_key: str = None, model: str = None) -> dict:
     prompt = build_chart_prompt(columns, sample_rows)

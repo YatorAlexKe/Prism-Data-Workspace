@@ -50,3 +50,6 @@ docs/agents/
 #mySQL
 database/prism.key
 database/*.key
+
+# NL->SQL evaluation output (backend/evals/run_nl_eval.py)
+backend/evals/results/

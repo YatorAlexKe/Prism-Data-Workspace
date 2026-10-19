@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils.db import get_connection, init_db
 from utils.profiler import profile_dataframe
 from utils.sql_validator import sanitize_column_name
+from utils.nl2sql import invalidate_description
 import pandas as pd
 
 router = APIRouter()
@@ -197,6 +198,7 @@ async def replace_dataset_rows(table_name: str, payload: DatasetUpdate):
             (new_count, len(new_columns), table_name),
         )
         conn.commit()
+        invalidate_description(table_name)
         return {
             "message": "Dataset updated.",
             "row_count": new_count,
@@ -220,6 +222,7 @@ async def delete_dataset(table_name: str):
         conn.execute(f"DROP TABLE IF EXISTS {table_name}")
         conn.execute("DELETE FROM datasets WHERE table_name=?", (table_name,))
         conn.commit()
+        invalidate_description(table_name)
         return {"message": f"Dataset {table_name} deleted."}
     finally:
         conn.close()

@@ -6,7 +6,8 @@ import time, sys, os, io
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils.db import get_connection, init_db
 from utils.sql_validator import validate_sql, extract_sql_from_response
-from utils.llm import build_schema_context, build_prompt, generate_sql, fix_sql, call_llm, build_chart_prompt
+from utils.llm import build_schema_context, fix_sql
+from utils.nl2sql import answer, is_schema_question, sqlite_runner, NLQueryError
 from utils.chart_advisor import heuristic_chart
 
 router = APIRouter()
@@ -80,14 +81,51 @@ def get_table_schema(conn, table_name: str) -> list:
     cursor = conn.execute(f"PRAGMA table_info({table_name})")
     return [{"name": c['name'], "type": c['type'] or 'text'} for c in cursor.fetchall()]
 
+# Rows sent to the browser per result. Bigger results are cut here (the
+# table can't usefully show more and the JSON gets huge); CSV/Excel export
+# re-runs the SQL and still downloads everything.
+DISPLAY_ROWS = 1000
+
 def execute_query(conn, sql: str) -> dict:
     cursor = conn.execute(sql)
-    rows = cursor.fetchall()
+    rows = cursor.fetchmany(DISPLAY_ROWS + 1)
+    truncated = len(rows) > DISPLAY_ROWS
+    names = [d[0] for d in cursor.description] if cursor.description else []
+    return capped_result(conn, sql, names, rows[:DISPLAY_ROWS], truncated)
+
+def count_rows(conn, sql: str):
+    try:
+        return conn.execute(f"SELECT COUNT(*) FROM ({sql.strip().rstrip(';')}) AS q").fetchone()[0]
+    except Exception:
+        return None
+
+def capped_result(conn, sql: str, col_names: list, rows: list, truncated: bool) -> dict:
+    result = format_result(col_names, rows)
+    result["truncated"] = truncated
+    result["total_count"] = count_rows(conn, sql) if truncated else result["row_count"]
+    return result
+
+def format_result(col_names: list, rows: list) -> dict:
     if not rows:
         return {"columns": [], "rows": [], "row_count": 0}
-    columns = [{"name": desc[0], "type": "text"} for desc in cursor.description]
+    columns = [{"name": n, "type": "text"} for n in col_names]
     data = [{col['name']: (val if val is not None else "") for col, val in zip(columns, row)} for row in rows]
     return {"columns": columns, "rows": data, "row_count": len(data)}
+
+def log_failure(conn, table_name: str, question: str, err: NLQueryError, provider: str, model: str):
+    try:
+        conn.execute("""
+            INSERT INTO query_failures (table_name, question, sql_query, stage, error, provider, model)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (table_name, question, err.sql, err.stage, err.message, provider, model))
+        conn.commit()
+    except Exception:
+        pass  # logging must never mask the user's real error
+
+def nl_error_response(err: NLQueryError) -> HTTPException:
+    # Same status codes and detail prefixes the frontend already shows.
+    status = 503 if err.stage == 'llm' else 400
+    return HTTPException(status_code=status, detail=err.message)
 
 @router.post("/query")
 async def natural_language_query(req: QueryRequest):
@@ -98,12 +136,8 @@ async def natural_language_query(req: QueryRequest):
         if not schema_cols:
             raise HTTPException(status_code=404, detail="Table not found.")
 
-        # Handle schema/metadata questions directly without SQL
-        schema_keywords = ['column', 'columns', 'fields', 'schema', 'structure', 
-                        'what is in', 'what data', 'describe', 'available']
-        q_lower = req.question.lower()
-        if any(kw in q_lower for kw in schema_keywords):
-            col_list = ', '.join([f"{c['name']} ({c['type']})" for c in schema_cols])
+        # Questions about the table's structure are answered from the schema.
+        if is_schema_question(req.question):
             return {
                 "question": req.question,
                 "sql": f"PRAGMA table_info({req.table_name});",
@@ -116,28 +150,20 @@ async def natural_language_query(req: QueryRequest):
                 "chart_suggestion": {"chart_type": "bar", "x_column": "column_name", "y_column": "data_type", "reason": "Schema overview"}
             }
         
-        schema_context = build_schema_context(req.table_name, schema_cols)
-        prompt_text = build_prompt(schema_context, req.question)
-        
+        provider = req.provider or "ollama"
+        start = time.time()
         try:
-            start = time.time()
-            raw_response = generate_sql(prompt_text, req.provider or "ollama", req.api_key, req.model)
-            llm_ms = int((time.time() - start) * 1000)
-        except Exception as e:
-            raise HTTPException(status_code=503, detail=f"LLM error: {str(e)}")
-        
-        sql = extract_sql_from_response(raw_response)
-        valid, reason = validate_sql(sql)
-        if not valid:
-            raise HTTPException(status_code=400, detail=f"SQL validation failed: {reason}")
-        
-        try:
-            start = time.time()
-            result = execute_query(conn, sql)
-            exec_ms = int((time.time() - start) * 1000)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"SQL execution error: {str(e)}")
-        
+            out = answer(req.question, [{"table_name": req.table_name, "columns": schema_cols}],
+                         sqlite_runner(conn), 'sqlite', provider, req.api_key, req.model,
+                         cache_key='sqlite', max_rows=DISPLAY_ROWS)
+        except NLQueryError as e:
+            log_failure(conn, req.table_name, req.question, e, provider, req.model)
+            raise nl_error_response(e)
+        total_ms = int((time.time() - start) * 1000)
+        sql = out["sql"]
+        result = capped_result(conn, sql, out["columns"], out["rows"], out["truncated"])
+        schema_context = out["schema"]
+
         # Chart suggestion
         chart = heuristic_chart(result['columns'], result['row_count'])
 
@@ -147,17 +173,19 @@ async def natural_language_query(req: QueryRequest):
         conn.execute("""
             INSERT INTO query_history (table_name, question, sql_query, row_count, execution_ms)
             VALUES (?, ?, ?, ?, ?)
-        """, (req.table_name, req.question, sql, result['row_count'], exec_ms))
+        """, (req.table_name, req.question, sql, result['total_count'] or result['row_count'], total_ms))
         conn.commit()
-        
+
         return {
             "question": req.question,
             "sql": sql,
+            "interpretation": out["interpretation"],
+            "repaired": bool(out["attempts"]),
             "schema": schema_context,
             "result": result,
             "chart_suggestion": chart,
             "location_info": location,
-            "timing": {"llm_ms": llm_ms, "exec_ms": exec_ms}
+            "timing": {"total_ms": total_ms}
         }
     finally:
         conn.close()
@@ -167,37 +195,29 @@ async def multi_table_query(req: MultiTableQueryRequest):
     init_db()
     conn = get_connection()
     try:
-        from utils.llm import build_multi_schema_context
         schemas = []
         for tname in req.table_names:
             cols = get_table_schema(conn, tname)
             if cols:
                 schemas.append({"table_name": tname, "columns": cols})
-        
+
         if not schemas:
             raise HTTPException(status_code=404, detail="No valid tables found.")
-        
-        schema_context = build_multi_schema_context(schemas)
-        prompt_text = build_prompt(schema_context, req.question)
-        
+
+        provider = req.provider or "ollama"
         try:
-            raw_response = generate_sql(prompt_text, req.provider or "ollama", req.api_key, req.model)
-        except Exception as e:
-            raise HTTPException(status_code=503, detail=f"LLM error: {str(e)}")
-        
-        sql = extract_sql_from_response(raw_response)
-        valid, reason = validate_sql(sql)
-        if not valid:
-            raise HTTPException(status_code=400, detail=f"SQL validation failed: {reason}")
-        
-        try:
-            result = execute_query(conn, sql)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"SQL execution error: {str(e)}")
-        
+            out = answer(req.question, schemas, sqlite_runner(conn), 'sqlite', provider, req.api_key, req.model,
+                         cache_key='sqlite', max_rows=DISPLAY_ROWS)
+        except NLQueryError as e:
+            log_failure(conn, ','.join(req.table_names), req.question, e, provider, req.model)
+            raise nl_error_response(e)
+
+        sql = out["sql"]
+        result = capped_result(conn, sql, out["columns"], out["rows"], out["truncated"])
         chart = heuristic_chart(result['columns'], result['row_count'])
-        
-        return {"question": req.question, "sql": sql, "result": result, "chart_suggestion": chart}
+
+        return {"question": req.question, "sql": sql, "interpretation": out["interpretation"],
+                "repaired": bool(out["attempts"]), "result": result, "chart_suggestion": chart}
     finally:
         conn.close()
 
@@ -235,7 +255,7 @@ async def execute_direct_sql(req: DirectSQLRequest):
         conn.execute("""
             INSERT INTO query_history (table_name, question, sql_query, row_count)
             VALUES (?, ?, ?, ?)
-        """, (req.table_name, "[Direct SQL]", req.sql, result['row_count']))
+        """, (req.table_name, "[Direct SQL]", req.sql, result['total_count'] or result['row_count']))
         conn.commit()
         return {"sql": req.sql, "result": result, "chart_suggestion": chart}
     except HTTPException:
@@ -252,6 +272,17 @@ async def get_history():
     try:
         cursor = conn.execute("SELECT * FROM query_history ORDER BY created_at DESC LIMIT 100")
         return {"history": [dict(r) for r in cursor.fetchall()]}
+    finally:
+        conn.close()
+
+@router.get("/query/failures")
+async def get_failures():
+    """Questions that didn't produce a working query — for diagnosing accuracy."""
+    init_db()
+    conn = get_connection()
+    try:
+        cursor = conn.execute("SELECT * FROM query_failures ORDER BY created_at DESC LIMIT 100")
+        return {"failures": [dict(r) for r in cursor.fetchall()]}
     finally:
         conn.close()
 

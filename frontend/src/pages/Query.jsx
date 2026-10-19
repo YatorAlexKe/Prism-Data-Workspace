@@ -45,6 +45,8 @@ export default function Query() {
   const [joinSuggestions, setJoinSuggestions] = useState(null); // null | [] | [...]
   const [saveOpen, setSaveOpen] = useState(false);
   const [locationInfo, setLocationInfo] = useState(null);
+  // How the model read the question ("Total revenue per region, highest first").
+  const [interpretation, setInterpretation] = useState('');
   const inputRef = useRef(null);
 
   // Initial load: fetch tables (datasets).
@@ -131,6 +133,7 @@ useEffect(() => {
     setJoinSuggestions(null);
     setCurrentResult(null);
     setCurrentSQL('');
+    setInterpretation('');
     try {
       let url, body;
 
@@ -164,6 +167,7 @@ useEffect(() => {
       setCurrentSQL(data.sql);
       setChartSuggestion(data.chart_suggestion || null);
       setLocationInfo(data.location_info || null);
+      setInterpretation(data.interpretation || '');
       setResultTab('table');
       loadHistoryCount();
     } catch (e) {
@@ -177,6 +181,7 @@ useEffect(() => {
     setCurrentResult(null);
     setCurrentSQL('');
     setError(null);
+    setInterpretation('');
   };
 
   const detectJoins = async () => {
@@ -342,6 +347,12 @@ useEffect(() => {
           </div>
 
           <div className="results-area">
+            {currentResult && interpretation && !loading && (
+              <div className="query-interpretation">
+                <span className="query-interpretation-label">Interpreted as</span>
+                {interpretation}
+              </div>
+            )}
             {currentResult && (
               <div className="results-tabs">
                 <button className={`rtab${resultTab === 'table' ? ' active' : ''}`} onClick={() => setResultTab('table')}>Table</button>
@@ -420,7 +431,15 @@ function ResultTable({ result }) {
   return (
     <>
       <div className="result-meta">
-        <span>Returned <span className="count">{result.row_count}</span> rows</span>
+        {result.truncated ? (
+          <span>
+            Showing first <span className="count">{result.row_count.toLocaleString()}</span>
+            {result.total_count != null && <> of <span className="count">{result.total_count.toLocaleString()}</span></>} rows
+            {' '}— use ↓ CSV or ↓ Excel to download them all
+          </span>
+        ) : (
+          <span>Returned <span className="count">{result.row_count}</span> rows</span>
+        )}
         <span>{result.columns.length} columns</span>
       </div>
       <div className="table-container">

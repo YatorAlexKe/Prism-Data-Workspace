@@ -55,6 +55,18 @@ def init_db():
             FOREIGN KEY (project_id) REFERENCES projects(id)
         );
 
+        CREATE TABLE IF NOT EXISTS query_failures (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            table_name TEXT,
+            question TEXT,
+            sql_query TEXT,
+            stage TEXT,
+            error TEXT,
+            provider TEXT,
+            model TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         CREATE TABLE IF NOT EXISTS query_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             table_name TEXT,

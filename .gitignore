@@ -5,9 +5,13 @@ __pycache__/
 venv/
 *.egg-info/
 
-# Database
+# Database (incl. SQLite WAL/shared-memory files, which can hold recent data)
 *.db
 *.sqlite
+*.db-wal
+*.db-shm
+*.db-journal
+database/backups/
 
 # Environment
 .env

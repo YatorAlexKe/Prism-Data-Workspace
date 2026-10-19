@@ -86,6 +86,7 @@ def _is_text(series: pd.Series) -> bool:
 
 
 _THOUSANDS = re.compile(r'^-?\d{1,3}(,\d{3})+(\.\d+)?$')
+_DECIMAL_COMMA = re.compile(r'^-?\d+,\d{1,2}$')
 _PLAIN_NUMBER = re.compile(r'^-?(\d+\.?\d*|\.\d+)$')
 
 
@@ -103,6 +104,10 @@ def _parse_number(value):
         s = '-' + s[2:]
     if _THOUSANDS.match(s):
         s = s.replace(',', '')
+    elif _DECIMAL_COMMA.match(s):
+        # A comma with 1-2 digits after it can't be a thousands separator:
+        # it's a decimal comma ("1,5", or OCR reading "77.27" as "77,27").
+        s = s.replace(',', '.')
     if not _PLAIN_NUMBER.match(s) or re.match(r'^-?0\d', s):
         return None
     return float(s)

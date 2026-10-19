@@ -130,6 +130,13 @@ def test_numeric_text_coerced_on_import():
     assert not is_num(df['zip'])              # leading-zero codes stay text
     assert not is_num(df['name'])
 
+def test_decimal_comma_vs_thousands():
+    from utils.ingestion import _parse_number
+    assert _parse_number('77,27') == 77.27     # OCR / European decimal comma
+    assert _parse_number('1,5') == 1.5
+    assert _parse_number('1,234') == 1234.0    # 3 digits after comma = thousands
+    assert _parse_number('12,3456') is None    # neither pattern: not a number
+
 def test_describe_table_grounds_values():
     import sqlite3
     from utils.nl2sql import describe_table, sqlite_runner
@@ -189,6 +196,7 @@ if __name__ == '__main__':
              test_chart_scatter,test_api_upload_visible_behaviour,
              test_cte_and_comments_allowed,test_extract_cuts_trailing_prose,
              test_schema_question_detection,test_numeric_text_coerced_on_import,
+             test_decimal_comma_vs_thousands,
              test_describe_table_grounds_values,test_parse_model_output,
              test_fix_date_like,test_pipeline_repairs_execution_error]
     passed = 0

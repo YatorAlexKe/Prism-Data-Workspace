@@ -1,25 +1,37 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { API } from '../api.js';
 import { useApp } from '../AppContext.jsx';
+import { useEditDataset } from '../components/EditDatasetContext.jsx';
 
-// Profile page: data-quality summary + per-column profile cards. Reads the
-// currently-selected table from AppContext (set by Sidebar/Dashboard/Ingest).
+// Profile page: data-quality summary + per-column profile cards.
+// The dataset is part of the address (/profile/sales_data), so refresh,
+// bookmarks and the back button all show the right one. /profile on its own
+// reopens the current dataset, or lists datasets to pick from.
 export default function Profile() {
   const navigate = useNavigate();
-  const { currentTable } = useApp();
+  const { tableName } = useParams();
+  const { allDatasets, currentTable, setCurrentTable, setSelectedTables } = useApp();
+  const { openEditDataset } = useEditDataset();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Keep the rest of the app (sidebar highlight, Query schema panel) in step.
   useEffect(() => {
-    if (!currentTable) { setData(null); return; }
+    if (tableName && tableName !== currentTable) setCurrentTable(tableName);
+  }, [tableName, currentTable, setCurrentTable]);
+
+  useEffect(() => {
+    if (!tableName) { setData(null); return; }
     let cancelled = false;
     (async () => {
       setLoading(true);
       setError(null);
+      // Keep showing this dataset's profile while it reloads; clear it when switching.
+      setData(prev => (prev && prev.table_name === tableName ? prev : null));
       try {
-        const res = await fetch(`${API}/profile/${currentTable}`);
+        const res = await fetch(`${API}/profile/${encodeURIComponent(tableName)}`);
         const body = await res.json();
         if (!res.ok) throw new Error(body.detail || 'Failed to load profile');
         if (!cancelled) setData(body);
@@ -30,28 +42,74 @@ export default function Profile() {
       }
     })();
     return () => { cancelled = true; };
-  }, [currentTable]);
+    // allDatasets is replaced after an edit is saved (refreshDatasets), so the
+    // profile reloads with the edited data.
+  }, [tableName, allDatasets]);
+
+  // /profile with a dataset already selected elsewhere: show that one.
+  if (!tableName && currentTable) {
+    return <Navigate to={`/profile/${encodeURIComponent(currentTable)}`} replace />;
+  }
+
+  const queryThis = () => {
+    setSelectedTables([tableName]);
+    navigate('/query');
+  };
 
   return (
     <div className="page active">
       <div className="profile-page">
-        {!currentTable && (
-          <div className="empty-state" style={{ height: '60vh' }}>
-            <div className="empty-icon">◉</div>
-            <div className="empty-text">Select a dataset to view its profile</div>
-            <button className="btn btn-ghost" style={{ marginTop: 12 }} onClick={() => navigate('/ingest')}>Import Data</button>
+        {!tableName && <DatasetPicker datasets={allDatasets} onPick={t => navigate(`/profile/${encodeURIComponent(t)}`)} onImport={() => navigate('/ingest')} />}
+
+        {tableName && (
+          <div className="profile-toolbar">
+            <label className="profile-switch">
+              <span>Dataset</span>
+              <select value={tableName} onChange={e => navigate(`/profile/${encodeURIComponent(e.target.value)}`)}>
+                {!allDatasets.some(d => d.table_name === tableName) && <option value={tableName}>{tableName}</option>}
+                {allDatasets.map(d => <option key={d.table_name} value={d.table_name}>{d.table_name}</option>)}
+              </select>
+            </label>
+            <div className="spacer" />
+            <button className="btn btn-ghost btn-sm" onClick={() => openEditDataset(tableName)}>✎ Edit</button>
+            <button className="btn btn-primary btn-sm" onClick={queryThis}>Query this dataset →</button>
           </div>
         )}
-        {currentTable && loading && (
+        {tableName && loading && !data && (
           <div className="empty-state">
             <div className="empty-icon">⟳</div>
             <div className="empty-text">Loading profile...</div>
           </div>
         )}
-        {currentTable && error && <div className="error-box">⚠ Failed to load profile: {error}</div>}
-        {currentTable && data && <ProfileBody data={data} />}
+        {tableName && error && <div className="error-box">⚠ Failed to load profile: {error}</div>}
+        {tableName && data && <ProfileBody data={data} />}
       </div>
     </div>
+  );
+}
+
+function DatasetPicker({ datasets, onPick, onImport }) {
+  if (datasets.length === 0) {
+    return (
+      <div className="empty-state" style={{ height: '60vh' }}>
+        <div className="empty-icon">◉</div>
+        <div className="empty-text">No datasets yet — import one to see its profile</div>
+        <button className="btn btn-primary" style={{ marginTop: 12 }} onClick={onImport}>Import Data</button>
+      </div>
+    );
+  }
+  return (
+    <>
+      <div className="section-title">Choose a dataset to profile</div>
+      <div className="profile-picker">
+        {datasets.map(d => (
+          <button key={d.table_name} className="profile-pick" onClick={() => onPick(d.table_name)}>
+            <span className="profile-pick-name">{d.table_name}</span>
+            <span className="profile-pick-meta">{d.row_count} rows · {d.col_count} cols</span>
+          </button>
+        ))}
+      </div>
+    </>
   );
 }
 

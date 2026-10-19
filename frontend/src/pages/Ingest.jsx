@@ -3,6 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { API } from '../api.js';
 import { useApp } from '../AppContext.jsx';
 
+const LAST_IMPORT_KEY = 'prism:last-import';
+
+function readLastImport() {
+  try {
+    const raw = sessionStorage.getItem(LAST_IMPORT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 // Ingest page — three tabs (File / URL+Google Sheets / Image OCR) sharing the
 // same progress + result strip below them. Ports all logic from the old
 // frontend/js/pages/ingest.js including the image-OCR form controls.
@@ -12,7 +23,17 @@ export default function Ingest() {
 
   const [tab, setTab] = useState('file');
   const [progress, setProgress] = useState(null); // string | null
-  const [result, setResult] = useState(null);     // { ok, data } | { error } | null
+  // { data, note? } | { error } | null. The last successful import is kept for
+  // the browser session, so going to its profile and back still shows it.
+  const [result, setResultState] = useState(readLastImport);
+
+  const setResult = (r) => {
+    setResultState(r);
+    try {
+      if (r && !r.error) sessionStorage.setItem(LAST_IMPORT_KEY, JSON.stringify(r));
+      else sessionStorage.removeItem(LAST_IMPORT_KEY);
+    } catch { /* storage full or blocked: the result just won't survive navigation */ }
+  };
 
   const showProgress = (msg) => { setProgress(msg); setResult(null); };
   const hideProgress = () => setProgress(null);
@@ -23,8 +44,7 @@ export default function Ingest() {
     navigate('/query');
   };
   const goProfileWith = (tableName) => {
-    setCurrentTable(tableName);
-    navigate('/profile');
+    navigate(`/profile/${encodeURIComponent(tableName)}`);
   };
 
   return (
@@ -53,7 +73,7 @@ export default function Ingest() {
           <div className="upload-result" style={{ display: 'block' }}>
             {result.error
               ? <div className="error-box">⚠ {result.error}</div>
-              : <UploadResult data={result.data} extraNote={result.note} goQueryWith={goQueryWith} goProfileWith={goProfileWith} />}
+              : <UploadResult data={result.data} extraNote={result.note} goQueryWith={goQueryWith} goProfileWith={goProfileWith} onDismiss={() => setResult(null)} />}
           </div>
         )}
       </div>
@@ -353,7 +373,7 @@ function ImagePanel({ onProgress, onResult, onDone, refreshDatasets }) {
 }
 
 // ───────── Shared upload result block ─────────
-function UploadResult({ data, extraNote, goQueryWith, goProfileWith }) {
+function UploadResult({ data, extraNote, goQueryWith, goProfileWith, onDismiss }) {
   const q = data.profile?.quality_score || 0;
   const qColor = q > 80 ? 'var(--green)' : q > 60 ? 'var(--yellow)' : 'var(--red)';
   return (
@@ -369,6 +389,7 @@ function UploadResult({ data, extraNote, goQueryWith, goProfileWith }) {
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           <button className="btn btn-primary btn-sm" onClick={() => goQueryWith(data.table_name)}>Query →</button>
           <button className="btn btn-blue btn-sm" onClick={() => goProfileWith(data.table_name)}>Profile →</button>
+          <button className="btn btn-ghost btn-sm" onClick={onDismiss} title="Dismiss" aria-label="Dismiss">×</button>
         </div>
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>

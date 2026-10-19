@@ -14,6 +14,7 @@ import Profile from './pages/Profile.jsx';
 import Projects from './pages/Projects.jsx';
 import History from './pages/History.jsx';
 import Welcome from './pages/Welcome.jsx';
+import NotFound from './pages/NotFound.jsx';
 import { useApp } from './AppContext.jsx';
 
 export default function App() {
@@ -41,9 +42,11 @@ export default function App() {
             <Route path="/ingest" element={<Ingest />} />
             <Route path="/query" element={<Query />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:tableName" element={<Profile />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/history" element={<History />} />
             <Route path="/connections" element={<Connections />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
         <EditDatasetModal />

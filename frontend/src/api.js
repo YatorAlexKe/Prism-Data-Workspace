@@ -16,4 +16,5 @@ export const PAGE_TITLES = {
   profile: 'Profile',
   projects: 'Projects',
   history: 'History',
+  connections: 'Connections',
 };

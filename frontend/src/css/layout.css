@@ -192,6 +192,52 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+}
+
+.topbar-breadcrumb .topbar-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-crumb {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.topbar-crumb:hover {
+  color: var(--text);
+}
+
+.topbar-back {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.topbar-back:hover {
+  color: var(--text);
+  border-color: var(--border2);
+  background: var(--surface2);
+}
+
+.topbar-back:focus-visible,
+.topbar-crumb:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 .spacer {

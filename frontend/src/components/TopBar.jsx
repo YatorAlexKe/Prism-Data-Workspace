@@ -1,14 +1,17 @@
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { PAGE_TITLES } from '../api.js';
 import { useApp } from '../AppContext.jsx';
+import BackButton from './BackButton.jsx';
 
-// Topbar: page title + LLM picker (provider/model/API key). Replaces the old
-// llm.js helpers — LLM config now lives in AppContext so any page can read it
-// via useApp().getLLMConfig().
+// Topbar: back button + breadcrumb + LLM picker (provider/model/API key).
+// LLM config lives in AppContext so any page can read it via
+// useApp().getLLMConfig().
 export default function TopBar() {
   const location = useLocation();
-  const pageKey = location.pathname.replace('/', '') || 'dashboard';
-  const title = PAGE_TITLES[pageKey] || 'Prism';
+  // "/profile/sales_data" -> ["profile", "sales_data"]
+  const [pageKey = 'dashboard', detail] = location.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+  const title = PAGE_TITLES[pageKey] || 'Page not found';
+  const isHome = pageKey === 'dashboard';
 
   const { llmProvider, setLlmProvider, llmModel, setLlmModel, llmApiKey, setLlmApiKey } = useApp();
 
@@ -19,7 +22,18 @@ export default function TopBar() {
 
   return (
     <div className="topbar">
-      <div className="topbar-title">{title}</div>
+      {!isHome && <BackButton />}
+      <nav className="topbar-breadcrumb" aria-label="Breadcrumb">
+        {detail ? (
+          <>
+            <Link to={`/${pageKey}`} className="topbar-crumb">{title}</Link>
+            <span aria-hidden="true">/</span>
+            <span className="topbar-title">{detail}</span>
+          </>
+        ) : (
+          <span className="topbar-title">{title}</span>
+        )}
+      </nav>
       <div className="spacer"></div>
       <div className="llm-config">
         <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--mono)' }}>LLM:</span>

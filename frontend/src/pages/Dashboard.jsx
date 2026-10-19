@@ -47,8 +47,7 @@ export default function Dashboard() {
     navigate('/query');
   };
   const goProfileWith = (tableName) => {
-    setCurrentTable(tableName);
-    navigate('/profile');
+    navigate(`/profile/${encodeURIComponent(tableName)}`);
   };
   const replayQuery = (question, tableName) => {
     if (tableName) {

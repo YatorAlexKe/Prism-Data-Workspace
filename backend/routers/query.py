@@ -7,10 +7,15 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils.db import get_connection, init_db
 from utils.sql_validator import validate_sql, extract_sql_from_response
 from utils.llm import build_schema_context, fix_sql
-from utils.nl2sql import answer, is_schema_question, sqlite_runner, NLQueryError
+from utils.nl2sql import answer, is_schema_question, sqlite_runner, suggest_questions, NLQueryError
 from utils.chart_advisor import heuristic_chart
 
 router = APIRouter()
+
+class PreviousTurn(BaseModel):
+    """The last answered question, so a follow-up ("now only North") can build on it."""
+    question: str
+    sql: Optional[str] = None
 
 class QueryRequest(BaseModel):
     table_name: str
@@ -18,6 +23,8 @@ class QueryRequest(BaseModel):
     provider: Optional[str] = "ollama"
     api_key: Optional[str] = None
     model: Optional[str] = None
+    previous: Optional[PreviousTurn] = None
+    allow_clarify: Optional[bool] = True
 
 class DirectSQLRequest(BaseModel):
     table_name: str
@@ -40,6 +47,8 @@ class MultiTableQueryRequest(BaseModel):
     provider: Optional[str] = "ollama"
     api_key: Optional[str] = None
     model: Optional[str] = None
+    previous: Optional[PreviousTurn] = None
+    allow_clarify: Optional[bool] = True
 
 def detect_location_type(columns: list) -> dict:
     col_names = [c['name'].lower() if isinstance(c, dict) else c.lower() for c in columns]
@@ -122,6 +131,10 @@ def log_failure(conn, table_name: str, question: str, err: NLQueryError, provide
     except Exception:
         pass  # logging must never mask the user's real error
 
+def clarification_response(question: str, out: dict) -> dict:
+    # Nothing ran: the user picks one of the options, which is asked as a new question.
+    return {"question": question, "clarification": out["clarification"], "interpretation": out["interpretation"]}
+
 def nl_error_response(err: NLQueryError) -> HTTPException:
     # Same status codes and detail prefixes the frontend already shows.
     status = 503 if err.stage == 'llm' else 400
@@ -155,10 +168,14 @@ async def natural_language_query(req: QueryRequest):
         try:
             out = answer(req.question, [{"table_name": req.table_name, "columns": schema_cols}],
                          sqlite_runner(conn), 'sqlite', provider, req.api_key, req.model,
-                         cache_key='sqlite', max_rows=DISPLAY_ROWS)
+                         cache_key='sqlite', max_rows=DISPLAY_ROWS,
+                         previous=dict(req.previous) if req.previous else None,
+                         allow_clarify=req.allow_clarify is not False)
         except NLQueryError as e:
             log_failure(conn, req.table_name, req.question, e, provider, req.model)
             raise nl_error_response(e)
+        if out.get("clarification"):
+            return clarification_response(req.question, out)
         total_ms = int((time.time() - start) * 1000)
         sql = out["sql"]
         result = capped_result(conn, sql, out["columns"], out["rows"], out["truncated"])
@@ -180,6 +197,7 @@ async def natural_language_query(req: QueryRequest):
             "question": req.question,
             "sql": sql,
             "interpretation": out["interpretation"],
+            "alternatives": out.get("alternatives", []),
             "repaired": bool(out["attempts"]),
             "schema": schema_context,
             "result": result,
@@ -207,16 +225,21 @@ async def multi_table_query(req: MultiTableQueryRequest):
         provider = req.provider or "ollama"
         try:
             out = answer(req.question, schemas, sqlite_runner(conn), 'sqlite', provider, req.api_key, req.model,
-                         cache_key='sqlite', max_rows=DISPLAY_ROWS)
+                         cache_key='sqlite', max_rows=DISPLAY_ROWS,
+                         previous=dict(req.previous) if req.previous else None,
+                         allow_clarify=req.allow_clarify is not False)
         except NLQueryError as e:
             log_failure(conn, ','.join(req.table_names), req.question, e, provider, req.model)
             raise nl_error_response(e)
+        if out.get("clarification"):
+            return clarification_response(req.question, out)
 
         sql = out["sql"]
         result = capped_result(conn, sql, out["columns"], out["rows"], out["truncated"])
         chart = heuristic_chart(result['columns'], result['row_count'])
 
         return {"question": req.question, "sql": sql, "interpretation": out["interpretation"],
+                "alternatives": out.get("alternatives", []),
                 "repaired": bool(out["attempts"]), "result": result, "chart_suggestion": chart}
     finally:
         conn.close()
@@ -275,9 +298,22 @@ async def get_history():
     finally:
         conn.close()
 
+@router.get("/query/suggestions/{table_name}")
+async def get_suggestions(table_name: str):
+    """Starter questions for an empty Query page, built from the table's columns."""
+    init_db()
+    conn = get_connection()
+    try:
+        cols = get_table_schema(conn, table_name)
+        if not cols:
+            raise HTTPException(status_code=404, detail="Table not found.")
+        return {"table_name": table_name, "suggestions": suggest_questions(sqlite_runner(conn), table_name, cols)}
+    finally:
+        conn.close()
+
 @router.get("/query/failures")
 async def get_failures():
-    """Questions that didn't produce a working query — for diagnosing accuracy."""
+    """Questions that didn't produce a working query â€” for diagnosing accuracy."""
     init_db()
     conn = get_connection()
     try:

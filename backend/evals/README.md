@@ -21,7 +21,24 @@ venv\Scripts\python.exe evals/run_nl_eval.py --db ../database/prism.db --runs 3 
   interpretation and any repair attempts for every question.
 
 Outcomes: `correct`, `wrong_result`, `empty_result`, `execution` / `validation`
-(no working query after the repair attempt), `llm` (model unreachable),
+(no working query after the repair attempt), `llm` (model unreachable or timed out),
 `schema_shortcut` (answered from the schema without the model).
+
+## Sets (`--set`, comma-separated, default `all`)
+
+| Set | Checks | Correct when |
+|---|---|---|
+| `tuning` (CASES) | Everyday questions; prompt changes were made against these | Result matches the gold query |
+| `heldout` (HELDOUT) | Never tuned against — the honest generalisation check | Result matches the gold query |
+| `defaults` | Vague time words ("last 3 months", "this year") count back from the latest date in the data | Result matches the gold query |
+| `clear_evaluative` | "Top 3 regions by quantity": evaluative words but a named measure | Answered correctly, without asking (`over_clarify` otherwise) |
+| `clarify` / `clarify_heldout` | Questions that name no measure ("Who are our best customers?") | Prism asks with complete options, or answers and offers other readings (`guessed` otherwise) |
+| `followups` | "Show revenue by region" → "Now only for Electronics" | The follow-up's result matches the gold query |
+
+`--with-unrelated-previous` asks each gold question with an unrelated earlier
+question as follow-up context, to catch context leaking into new questions.
+
+Clarification options and offered readings can't be checked automatically for
+being sensible — read them in the results file after a run.
 
 Add a case whenever a real question fails — that's how regressions get caught.

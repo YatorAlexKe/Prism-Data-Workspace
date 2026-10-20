@@ -253,6 +253,79 @@ def _describe(run, table, columns, dialect):
     return '\n'.join(lines)
 
 
+# ── starter questions ───────────────────────────────────────────────────────
+_ID_LIKE = re.compile(r'(^|_)(id|code|zip|phone|key)$|^(id|index)$', re.IGNORECASE)
+# Numbers that label rather than measure: summing or averaging them is
+# meaningless. Matched against whole words of the column name ("lat" must not
+# match "population").
+_NOT_MEASURE = {'year', 'month', 'day', 'week', 'hour', 'minute', 'lat', 'latitude', 'lon', 'lng', 'longitude',
+                'position', 'rank', 'number', 'lapnumber', 'lap', 'stint', 'age'}
+# Measures that make sense as totals, most interesting first.
+_ADDITIVE = ['revenue', 'sales', 'amount', 'profit', 'quantity', 'qty', 'orders', 'count', 'value', 'cost',
+             'price', 'population', 'total']
+
+
+def suggest_questions(run, table, columns, dialect='sqlite', limit=5):
+    """A few questions that fit this table's columns, for an empty Query page.
+    Built from the data (no model call) so they're instant and always valid."""
+    qt = quote_ident(table, dialect)
+    names, sample = run(f"SELECT * FROM {qt} LIMIT 500")
+    index = {n: i for i, n in enumerate(names)}
+
+    numbers, dates, categories, labels = [], [], [], []
+    for col in columns:
+        name = col['name']
+        i = index.get(name)
+        vals = [r[i] for r in sample if i is not None and r[i] is not None and r[i] != '']
+        if not vals or _ID_LIKE.search(name):
+            continue
+        if all(isinstance(v, (int, float, Decimal)) and not isinstance(v, bool) for v in vals):
+            if set(vals) - {0, 1}:   # 0/1 columns are flags, not measures
+                numbers.append(name)
+            continue
+        strs = [str(v) for v in vals]
+        if all(isinstance(v, (datetime.date, datetime.datetime)) for v in vals) or (_date_format(strs) or '').startswith('YYYY'):
+            dates.append(name)
+        elif not _is_numeric_text(strs):
+            distinct = len(set(strs))
+            (categories if 2 <= distinct <= 12 else labels).append((distinct, name))
+
+    measures = [n for n in numbers if not _NOT_MEASURE & set(n.lower().split('_'))]
+
+    def additive_rank(name):
+        low = name.lower()
+        return next((i for i, k in enumerate(_ADDITIVE) if k in low), None)
+
+    additive = sorted((n for n in measures if additive_rank(n) is not None), key=additive_rank)
+    total_col = additive[0] if additive else None
+    measure = total_col or (measures[0] if measures else None)
+    category = min(categories)[1] if categories else None        # fewest distinct values
+    label = max(labels)[1] if labels else None                   # most distinct values (names)
+
+    def words(name):
+        return name.replace('_', ' ')
+
+    def total_of(name):
+        w = words(name)
+        return w[0].upper() + w[1:] if w.lower().startswith('total') else f"Total {w}"
+
+    out = []
+    if total_col and category:
+        out.append(f"{total_of(total_col)} by {words(category)}")
+    elif measure and category:
+        out.append(f"Average {words(measure)} by {words(category)}")
+    if total_col and dates:
+        out.append(f"{total_of(total_col)} per month")
+    if measure and label:
+        out.append(f"Which {words(label)} has the highest {words(measure)}?")
+    if category:
+        out.append(f"How many records are there for each {words(category)}?")
+    if measure:
+        out.append(f"What is the average {words(measure)}?")
+    out.append("Show the first 10 rows")
+    return out[:limit]
+
+
 def share_values_with(provider: str) -> bool:
     """Sample values stay on the machine for local models. Hosted providers get
     them only when the operator opts in (PRISM_SHARE_SAMPLE_VALUES=1)."""
@@ -271,9 +344,45 @@ RESPONSE_SCHEMA = {
     "required": ["interpretation", "sql"],
 }
 
+# When asking back is allowed the model may return a clarifying question
+# with 2-4 fully specific rewrites of the user's question as options.
+CLARIFY_RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "status": {"type": "string", "enum": ["answer", "clarify"]},
+        "interpretation": {"type": "string"},
+        "sql": {"type": "string"},
+        "question": {"type": "string"},
+        # Each option names the columns it would use, so options built on
+        # columns that don't exist can be dropped before the user sees them.
+        "options": {"type": "array", "items": {
+            "type": "object",
+            "properties": {"question": {"type": "string"}, "columns": {"type": "array", "items": {"type": "string"}}},
+            "required": ["question", "columns"],
+        }},
+    },
+    "required": ["status", "interpretation", "sql"],
+}
 
-def build_system_prompt(dialect='sqlite') -> str:
+_CLARIFY_RULE = """
+14. Ask instead of answering only when the question cannot be answered without choosing between readings that give different results: words like "best", "top", "performs", "doing well" or "biggest" with no measure named while the data has several plausible measures, or no measure at all ("How are we doing?"). Do not ask when the question names its measure, when one reading is clearly the natural one, or because of vague time words (rule 15 covers those).
+    To ask: "status": "clarify", "sql": "", "question": a short question to the user, "options": 2 to 4 readings, each {"question": a complete, specific rewrite of their question naming its measure (e.g. "Which region has the highest total revenue?"), "columns": the exact column names from DATABASE that reading uses}.
+    Every option must be answerable with the columns listed under DATABASE (never offer a measure the data doesn't have) and must keep the subject of the question (for "Compare the regions": "Compare the regions by total revenue", not just "Total revenue").
+    Otherwise "status": "answer"."""
+
+_TIME_RULE = """
+15. Vague time words count back from the latest date shown for the date column, not from today: "recent"/"latest"/"newest" = the newest rows; "this year" = the latest year in the data; "this month"/"the most recent month" = the latest month in the data; "last N months" = the N months ending with the latest month in the data."""
+
+
+def build_system_prompt(dialect='sqlite', allow_clarify=False) -> str:
     d = DIALECTS[dialect]
+    clarify = _CLARIFY_RULE if allow_clarify else ""
+    interpretation = '"interpretation": "<one plain-English sentence saying how you read the question, including any assumption>"'
+    if allow_clarify:
+        reply = ('{"status": "answer" or "clarify", ' + interpretation + ', "sql": "<the query, or empty when asking>", '
+                 '"question": "<only when asking>", "options": [{"question": "<only when asking>", "columns": ["<column>"]}]}')
+    else:
+        reply = '{' + interpretation + ', "sql": "<the query>"}'
     return f"""You turn questions about data into one {d['name']} query.
 
 Rules:
@@ -289,17 +398,26 @@ Rules:
 10. Percentages: 100.0 * part / total.
 11. Rankings: ORDER BY explicitly. "Top"/"best" without a number means LIMIT 10; "which ... the most" means LIMIT 1.
 12. Give computed columns readable aliases, e.g. total_revenue, order_count.
-13. If the question is vague, pick the most reasonable reading.
+13. If the question is vague, pick the most reasonable reading and say so in "interpretation".
+16. Do not add filters the question doesn't ask for (e.g. status = 'Completed'). If you think one would help, mention it in "interpretation" instead of applying it.{clarify}{_TIME_RULE}
 
-Reply with JSON only: {{"interpretation": "<one plain-English sentence saying how you read the question, including any assumption>", "sql": "<the query>"}}"""
-
-
-def build_user_prompt(schema_text: str, question: str) -> str:
-    return f"DATABASE:\n{schema_text}\n\nQUESTION: {question}"
+Reply with JSON only: {reply}"""
 
 
-def parse_model_output(raw: str):
-    """(sql, interpretation) from the model's reply; tolerant of fences and prose."""
+def build_user_prompt(schema_text: str, question: str, previous=None) -> str:
+    prompt = f"DATABASE:\n{schema_text}\n\n"
+    if previous and previous.get('question'):
+        prompt += (f"PREVIOUS QUESTION: {previous['question']}\n"
+                   f"PREVIOUS SQL: {previous.get('sql') or '(none)'}\n"
+                   "The new question may build on the previous one (\"now only for X\", \"what about 2023\", "
+                   "\"use Y instead\", \"and Z as well\"). If it does, adapt the previous SQL. If it is a new, "
+                   "self-contained question, ignore the previous one completely.\n\n")
+    return prompt + f"QUESTION: {question}"
+
+
+def parse_model_reply(raw: str) -> dict:
+    """{"status", "sql", "interpretation", "question", "options"} from the model's
+    reply; tolerant of code fences, prose around the JSON, and non-JSON SQL."""
     text = (raw or '').strip()
     text = re.sub(r'^```(?:json)?\s*|\s*```$', '', text)
     obj = None
@@ -312,9 +430,38 @@ def parse_model_output(raw: str):
                 obj = json.loads(m.group(0))
             except ValueError:
                 obj = None
-    if isinstance(obj, dict) and isinstance(obj.get('sql'), str) and obj['sql'].strip():
-        return obj['sql'].strip().rstrip(';').strip(), str(obj.get('interpretation') or '').strip()
-    return extract_sql_from_response(text).rstrip(';').strip(), ''
+    if not isinstance(obj, dict):
+        return {"status": "answer", "sql": extract_sql_from_response(text).rstrip(';').strip(),
+                "interpretation": "", "question": "", "options": []}
+    # Options: [{"question", "columns"}]; plain strings (hosted providers that
+    # ignore the schema) are kept with columns=None, meaning "not checkable".
+    options, seen = [], set()
+    for o in obj.get('options') if isinstance(obj.get('options'), list) else []:
+        if isinstance(o, dict):
+            text = str(o.get('question') or '').strip()
+            cols = [str(c) for c in o.get('columns')] if isinstance(o.get('columns'), list) else None
+        else:
+            text, cols = str(o).strip(), None
+        if text and text not in seen:
+            seen.add(text)
+            options.append({"question": text, "columns": cols})
+    options = options[:4]
+    sql = obj.get('sql') if isinstance(obj.get('sql'), str) else ''
+    return {
+        "status": 'clarify' if obj.get('status') == 'clarify' else 'answer',
+        "sql": sql.strip().rstrip(';').strip(),
+        "interpretation": str(obj.get('interpretation') or '').strip(),
+        "question": str(obj.get('question') or '').strip(),
+        "options": options,
+    }
+
+
+def parse_model_output(raw: str):
+    """(sql, interpretation) — the answer-only view of parse_model_reply."""
+    reply = parse_model_reply(raw)
+    if not reply["sql"] and reply["status"] == 'answer':
+        return extract_sql_from_response(raw or '').rstrip(';').strip(), reply["interpretation"]
+    return reply["sql"], reply["interpretation"]
 
 
 def _repair_note(sql, problem, stage, dialect):
@@ -343,42 +490,167 @@ def _filters_on_text(sql: str) -> bool:
     return bool(re.search(r"\b(WHERE|HAVING)\b.*('[^']*'|\bLIKE\b)", sql, re.IGNORECASE | re.DOTALL))
 
 
+# ── ambiguity and "today" guards ────────────────────────────────────────────
+_EVALUATIVE = re.compile(r'\b(best|worst|top|performs?|performing|performance|doing|biggest|strongest|weakest|leading|'
+                         r'compare|comparing|comparison)\b', re.IGNORECASE)
+_ADMITS_VAGUE = re.compile(r'\b(vague|ambiguous|unclear|not specif\w*)\b', re.IGNORECASE)
+def _measure_columns(tables: list) -> list:
+    """Numeric columns that measure something: not IDs, not labels like year
+    or position. Most interesting first (revenue, quantity, ...)."""
+    cols = [c['name'] for t in tables for c in t['columns']
+            if any(k in str(c.get('type', '')).upper() for k in ('INT', 'REAL', 'FLOA', 'DOUB', 'DEC', 'NUM'))
+            and not _ID_LIKE.search(c['name'])
+            and not _NOT_MEASURE & set(c['name'].lower().split('_'))]
+
+    def rank(name):
+        low = name.lower()
+        return next((i for i, k in enumerate(_ADDITIVE) if k in low), len(_ADDITIVE))
+    return sorted(dict.fromkeys(cols), key=rank)
+
+
+def alternative_readings(question: str, sql: str, tables: list, limit: int = 3) -> list:
+    """Other ways to read a question that names no measure, one per measure the
+    answer didn't use: "Show me the best products" answered by revenue offers
+    "Show me the best products by quantity". Built from real columns only."""
+    used = sql.lower()
+    base = question.strip().rstrip('?.! ')
+    return [f"{base} by {m.replace('_', ' ')}" for m in _measure_columns(tables) if m.lower() not in used][:limit]
+
+
+def names_a_measure(question: str, tables: list) -> bool:
+    """Does the question mention a numeric column, by name or word stem
+    ("revenue" -> total_revenue, "populous" -> population)?"""
+    words = {w for w in re.findall(r'[a-z]+', question.lower()) if len(w) >= 3}
+    # SQLite (INTEGER, REAL) and MySQL (int, tinyint, decimal, double, ...) type
+    # names. ID columns aren't measures ("customers" must not match customer_id).
+    numeric = [c['name'] for t in tables for c in t['columns']
+               if any(k in str(c.get('type', '')).upper() for k in ('INT', 'REAL', 'FLOA', 'DOUB', 'DEC', 'NUM'))
+               and not _ID_LIKE.search(c['name'])]
+    for col in numeric:
+        for part in col.lower().split('_'):
+            if len(part) >= 3 and any(w == part or (len(part) >= 5 and len(w) >= 5 and w[:5] == part[:5]) for w in words):
+                return True
+    return False
+
+
+def looks_ambiguous(question: str, interpretation: str, tables: list) -> bool:
+    if _ADMITS_VAGUE.search(interpretation or ''):
+        return True
+    return bool(_EVALUATIVE.search(question)) and not names_a_measure(question, tables)
+
+
+# The question really is about the calendar date, so 'now' is right.
+_MEANS_TODAY = re.compile(r'\b(today|now|current date|this week)\b', re.IGNORECASE)
+_RANGE_END = re.compile(r"dates formatted YYYY-MM-DD[^,]*, from '[^']*' to '(\d{4}-\d{2}-\d{2})")
+_NOW = re.compile(r"'now'|\bCURRENT_DATE\b|\bCURRENT_TIMESTAMP\b", re.IGNORECASE)
+
+
+def latest_date(schema_text: str):
+    """Latest date in the described tables (ISO date columns), or None."""
+    ends = _RANGE_END.findall(schema_text)
+    return max(ends) if ends else None
+
+
+def anchor_now(sql: str, latest: str) -> str:
+    """Rule 15 in code: relative dates count back from the data, not today.
+    date('now', '-3 months') -> date('2024-12-27', '-3 months')."""
+    return _NOW.sub(f"'{latest}'", sql)
+
+
+def grounded_options(options: list, tables: list) -> list:
+    """Option texts whose columns all exist in `tables`. Options that name a
+    column the data doesn't have ("customer_satisfaction") are dropped."""
+    known = {c['name'].lower() for t in tables for c in t['columns']}
+    keep = []
+    for o in options:
+        cols = o.get('columns')
+        # "sales_data.total_revenue" -> "total_revenue"
+        if cols is None or all(str(c).split('.')[-1].strip('"`[] ').lower() in known for c in cols):
+            keep.append(o['question'])
+    return keep
+
+
+def complete_options(question: str, options: list) -> list:
+    """Each option is asked on its own when clicked, so it must stand alone.
+    Fragments like "Total revenue" are completed with the original question
+    ("Compare the regions by total revenue")."""
+    base = question.strip().rstrip('?.! ')
+    out = []
+    for o in options:
+        o = o.strip()
+        if len(o.split()) < 4:
+            o = f"{base} by {o[0].lower() + o[1:] if o[:1].isupper() and not o[1:2].isupper() else o}"
+        out.append(o)
+    return list(dict.fromkeys(out))
+
+
 # ── pipeline ────────────────────────────────────────────────────────────────
 def answer(question, tables, run, dialect='sqlite', provider='ollama', api_key=None, model=None,
-           cache_key=None, max_rows=None):
+           cache_key=None, max_rows=None, previous=None, allow_clarify=True):
     """Answer `question` over `tables` ([{"table_name", "columns"}]).
 
     Returns {sql, interpretation, columns, rows, truncated, attempts, schema};
     with `max_rows`, at most that many rows come back and `truncated` says
-    whether there were more. Raises NLQueryError when no working query is produced.
+    whether there were more. When the question is ambiguous and
+    `allow_clarify` is set, nothing runs and the result carries
+    "clarification": {"question", "options"} instead. `previous` ({"question",
+    "sql"}) lets a follow-up build on the last answer.
+    Raises NLQueryError when no working query is produced.
     """
     include_values = share_values_with(provider)
     schema_text = '\n\n'.join(
         describe_table(run, t['table_name'], t['columns'], dialect, include_values, cache_key) for t in tables
     )
-    system = build_system_prompt(dialect)
-    prompt = build_user_prompt(schema_text, question)
+    prompt = build_user_prompt(schema_text, question, previous)
     attempts = []
 
-    def ask(p):
+    def ask(p, clarify_ok=False):
         try:
-            raw = call_llm(p, provider, api_key, model, system=system, json_schema=RESPONSE_SCHEMA)
+            raw = call_llm(p, provider, api_key, model,
+                           system=build_system_prompt(dialect, clarify_ok),
+                           json_schema=CLARIFY_RESPONSE_SCHEMA if clarify_ok else RESPONSE_SCHEMA)
         except Exception as e:
             raise NLQueryError('llm', f"LLM error: {e}", attempts=attempts)
-        return parse_model_output(raw)
+        return parse_model_reply(raw)
+
+    offer_alternatives = False
 
     def result(sql, interp, cols, rows):
         truncated = bool(max_rows) and len(rows) > max_rows
-        return {"sql": sql, "interpretation": interp, "columns": cols,
-                "rows": rows[:max_rows] if truncated else rows, "truncated": truncated,
-                "attempts": attempts, "schema": schema_text}
+        out = {"sql": sql, "interpretation": interp, "columns": cols,
+               "rows": rows[:max_rows] if truncated else rows, "truncated": truncated,
+               "attempts": attempts, "schema": schema_text}
+        if offer_alternatives and sql:
+            alternatives = alternative_readings(question, sql, tables)
+            if alternatives:
+                out["alternatives"] = alternatives
+        return out
 
-    sql, interp = ask(prompt)
+    reply = ask(prompt, allow_clarify)
+    options = grounded_options(reply["options"], tables) if reply["status"] == 'clarify' else []
+    if allow_clarify and len(options) >= 2:
+        out = result("", reply["interpretation"], [], [])
+        # Fixed heading: the model's own "question" is often a restatement of
+        # one option, which reads like an answer above the choices.
+        out["clarification"] = {"question": "Which did you mean?",
+                                "options": complete_options(question, options)}
+        return out
+    if not reply["sql"]:
+        # Asked without usable options, or replied without a query: answer instead.
+        reply = ask(prompt)
+    # A question that names no measure (or that the model itself called vague)
+    # gets answered with the natural reading, plus the other readings offered
+    # as one-click alternatives (built from real columns, see alternative_readings).
+    offer_alternatives = allow_clarify and looks_ambiguous(question, reply["interpretation"], tables)
+    sql, interp = reply["sql"], reply["interpretation"]
+    latest = latest_date(schema_text) if dialect == 'sqlite' and not _MEANS_TODAY.search(question) else None
     fallback = None   # a valid-but-empty result, kept in case the repair does worse
     stage = problem = None
     for attempt in range(MAX_REPAIRS + 1):
         if dialect == 'sqlite':
             sql = fix_date_like(sql)
+            if latest:
+                sql = anchor_now(sql, latest)
         ok, reason = validate_sql(sql)
         if not ok:
             stage, problem = 'validation', f"SQL validation failed: {reason}"
@@ -395,7 +667,8 @@ def answer(question, tables, run, dialect='sqlite', provider='ollama', api_key=N
         attempts.append({"sql": sql, "stage": stage, "error": problem})
         if attempt == MAX_REPAIRS:
             break
-        sql, interp = ask(prompt + _repair_note(sql, problem, stage, dialect))
+        repaired = ask(prompt + _repair_note(sql, problem, stage, dialect))
+        sql, interp = repaired["sql"], repaired["interpretation"]
 
     if fallback is not None:
         return fallback

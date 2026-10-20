@@ -20,6 +20,7 @@ CASES = [
      "SELECT AVG(total_revenue) FROM sales_data", False),
     ("sales_data", "Total revenue per month in 2024",
      "SELECT strftime('%Y-%m', order_date) AS m, SUM(total_revenue) FROM sales_data WHERE order_date LIKE '2024%' GROUP BY m ORDER BY m", False),
+    # "The most phones" means units; asking would be over-asking (see CLARIFY).
     ("sales_data", "Which region sold the most phones?",
      "SELECT region FROM sales_data WHERE product = 'Phone' GROUP BY region ORDER BY SUM(quantity) DESC LIMIT 1", True),
     ("sales_data", "Show orders from the north region",
@@ -106,4 +107,69 @@ HELDOUT = [
      "SELECT region, COUNT(*) FROM global_water_access GROUP BY region", False),
     ("global_water_access", "List European countries with water access above 95%",
      "SELECT country FROM global_water_access WHERE region = 'Europe' AND water_access_pct > 95", False),
+]
+
+# ── Phase 2: vague questions ────────────────────────────────────────────────
+# Vague time words resolve against the latest date in the data, not today
+# (sales_data runs 2024-01-01 .. 2024-12-27). Same format as CASES.
+DEFAULTS = [
+    ("sales_data", "What was the revenue in the most recent month?",
+     "SELECT SUM(total_revenue) FROM sales_data WHERE order_date LIKE '2024-12%'", False),
+    ("sales_data", "Total revenue over the last 3 months",
+     "SELECT SUM(total_revenue) FROM sales_data WHERE order_date >= '2024-10-01'", False),
+    ("sales_data", "Show the latest 5 orders",
+     "SELECT order_id FROM sales_data ORDER BY order_date DESC LIMIT 5", False),
+    ("sales_data", "How many orders were placed this year?",
+     "SELECT COUNT(*) FROM sales_data WHERE order_date LIKE '2024%'", False),
+    ("customers", "Top customers by lifetime value",
+     "SELECT name FROM customers ORDER BY lifetime_value DESC LIMIT 10", True),
+]
+
+# Genuinely ambiguous: readings give different answers. Correct = Prism asks
+# a clarifying question with at least two options instead of guessing.
+CLARIFY = [
+    ("sales_data", "Which region performs best?"),              # revenue, orders, quantity?
+    ("customers", "Who are our best customers?"),              # lifetime value or orders
+    ("sales_data", "Show me the best products"),               # revenue or quantity
+    ("global_water_access", "Which countries are doing best?"),  # water or sanitation
+    ("sales_data", "Compare the regions"),                      # by revenue, orders, quantity?
+    ("sales_data", "How are we doing?"),                        # no metric at all
+]
+
+# (table, first question, follow-up, gold SQL for the follow-up, ordered?)
+# The follow-up is asked with the first question and its SQL as context.
+FOLLOWUPS = [
+    ("sales_data", "Show total revenue by region", "Now only for Electronics",
+     "SELECT region, SUM(total_revenue) FROM sales_data WHERE category = 'Electronics' GROUP BY region", False),
+    ("sales_data", "How many orders were cancelled?", "What about completed ones?",
+     "SELECT COUNT(*) FROM sales_data WHERE status = 'Completed'", False),
+    ("customers", "Top 10 customers by lifetime value", "Only Gold tier",
+     "SELECT name FROM customers WHERE tier = 'Gold' ORDER BY lifetime_value DESC LIMIT 10", True),
+    ("global_water_access", "Average water access by region", "Use sanitation access instead",
+     "SELECT region, AVG(sanitation_access_pct) FROM global_water_access GROUP BY region", False),
+    ("sales_data", "Total revenue per month in 2024", "Just the North region",
+     "SELECT strftime('%Y-%m', order_date) AS m, SUM(total_revenue) FROM sales_data "
+     "WHERE region = 'North' GROUP BY m", False),
+    ("global_water_access", "Which countries have water access below 60%?", "And sanitation below 50% as well",
+     "SELECT country FROM global_water_access WHERE water_access_pct < 60 AND sanitation_access_pct < 50", False),
+]
+
+# Written after the ambiguity trigger (nl2sql.looks_ambiguous) was designed
+# against CLARIFY, as a fresher check. The author knew the trigger's word
+# list, so treat these as weaker evidence than HELDOUT.
+CLARIFY_HELDOUT = [
+    ("global_water_access", "Which region is doing worst?"),
+    ("customers", "Show our top customers"),
+    ("sales_data", "What are our strongest categories?"),
+    ("customers", "Compare the tiers"),
+]
+
+# Evaluative words, but the measure is named: these must be answered, not asked.
+CLEAR_EVALUATIVE = [
+    ("sales_data", "Top 3 regions by quantity sold",
+     "SELECT region FROM sales_data GROUP BY region ORDER BY SUM(quantity) DESC LIMIT 3", True),
+    ("global_water_access", "Which region has the best sanitation access on average?",
+     "SELECT region FROM global_water_access GROUP BY region ORDER BY AVG(sanitation_access_pct) DESC LIMIT 1", True),
+    ("customers", "Compare tiers by average lifetime value",
+     "SELECT tier, AVG(lifetime_value) FROM customers GROUP BY tier", False),
 ]

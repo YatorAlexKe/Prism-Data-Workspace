@@ -29,6 +29,10 @@ class ConnectionTest(BaseModel):
     username: str
     password: str
 
+class PreviousTurn(BaseModel):
+    question: str
+    sql: Optional[str] = None
+
 class ConnectionQuery(BaseModel):
     connection_id: int
     table_name: str
@@ -36,6 +40,8 @@ class ConnectionQuery(BaseModel):
     provider: Optional[str] = "ollama"
     api_key: Optional[str] = None
     model: Optional[str] = None
+    previous: Optional[PreviousTurn] = None
+    allow_clarify: Optional[bool] = True
 
 class DirectConnectionSQL(BaseModel):
     connection_id: int
@@ -193,7 +199,12 @@ async def query_connection(req: ConnectionQuery):
         run = mysql_runner(mconn)
         out = answer(req.question, [{"table_name": req.table_name, "columns": table['columns']}],
                      run, 'mysql', req.provider or "ollama", req.api_key, req.model,
-                     cache_key=f"mysql:{req.connection_id}", max_rows=DISPLAY_ROWS)
+                     cache_key=f"mysql:{req.connection_id}", max_rows=DISPLAY_ROWS,
+                     previous=dict(req.previous) if req.previous else None,
+                     allow_clarify=req.allow_clarify is not False)
+        if out.get("clarification"):
+            return {"question": req.question, "clarification": out["clarification"],
+                    "interpretation": out["interpretation"], "source": "mysql"}
         total = len(out["rows"])
         if out["truncated"]:
             try:
@@ -217,6 +228,7 @@ async def query_connection(req: ConnectionQuery):
         "question": req.question,
         "sql": out["sql"],
         "interpretation": out["interpretation"],
+        "alternatives": out.get("alternatives", []),
         "repaired": bool(out["attempts"]),
         "schema": out["schema"],
         "result": result,

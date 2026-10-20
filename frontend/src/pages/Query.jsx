@@ -47,7 +47,18 @@ export default function Query() {
   const [locationInfo, setLocationInfo] = useState(null);
   // How the model read the question ("Total revenue per region, highest first").
   const [interpretation, setInterpretation] = useState('');
+  // An ambiguous question comes back as {question, options, original} instead of a result.
+  const [clarification, setClarification] = useState(null);
+  // A question that named no measure is answered by its natural reading;
+  // these are the other readings, one click each.
+  const [alternatives, setAlternatives] = useState([]);
+  // Last answered question on these tables; the next question can build on it.
+  const [lastTurn, setLastTurn] = useState(null); // {question, sql, tables}
+  const [suggestions, setSuggestions] = useState([]);
   const inputRef = useRef(null);
+
+  const tablesKey = selectedTables.join(',');
+  const followUp = lastTurn && lastTurn.tables === tablesKey ? lastTurn : null;
 
   // Initial load: fetch tables (datasets).
   useEffect(() => {
@@ -97,6 +108,18 @@ useEffect(() => {
     })();
   }, [currentTable]);
 
+  // Starter questions for the current table (built server-side from its columns).
+  useEffect(() => {
+    setSuggestions([]);
+    if (!currentTable || sessionStorage.getItem('mysql_connection')) return;
+    let cancelled = false;
+    fetch(`${API}/query/suggestions/${encodeURIComponent(currentTable)}`)
+      .then(r => (r.ok ? r.json() : { suggestions: [] }))
+      .then(d => { if (!cancelled) setSuggestions(d.suggestions || []); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [currentTable]);
+
   // Ctrl/Cmd+Enter to run.
   useEffect(() => {
     const input = inputRef.current;
@@ -124,16 +147,25 @@ useEffect(() => {
     setTemplatesOpen(false);
   };
 
-  const runQuery = async () => {
-    const q = question.trim();
+  // `allowClarify: false` is used after the user has picked a reading, so the
+  // model answers instead of asking again. `fresh` skips follow-up context
+  // (an alternative reading replaces the last question, it doesn't refine it).
+  const runQuery = async (questionOverride, { allowClarify = true, fresh = false } = {}) => {
+    const q = (questionOverride ?? question).trim();
     if (!q || selectedTables.length === 0) return;
-    const llm = getLLMConfig();
+    const llm = {
+      ...getLLMConfig(),
+      allow_clarify: allowClarify,
+      previous: followUp && !fresh ? { question: followUp.question, sql: followUp.sql } : null,
+    };
     setLoading(true);
     setError(null);
     setJoinSuggestions(null);
     setCurrentResult(null);
     setCurrentSQL('');
     setInterpretation('');
+    setClarification(null);
+    setAlternatives([]);
     try {
       let url, body;
 
@@ -163,11 +195,18 @@ useEffect(() => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Query failed');
+      if (data.clarification) {
+        setClarification({ ...data.clarification, original: q });
+        setLoading(false);
+        return;
+      }
+      setLastTurn({ question: q, sql: data.sql, tables: tablesKey });
       setCurrentResult(data.result);
       setCurrentSQL(data.sql);
       setChartSuggestion(data.chart_suggestion || null);
       setLocationInfo(data.location_info || null);
       setInterpretation(data.interpretation || '');
+      setAlternatives(data.alternatives || []);
       setResultTab('table');
       loadHistoryCount();
     } catch (e) {
@@ -182,6 +221,15 @@ useEffect(() => {
     setCurrentSQL('');
     setError(null);
     setInterpretation('');
+    setClarification(null);
+    setAlternatives([]);
+    setLastTurn(null);
+  };
+
+  // Ask a specific question right away (a clarification option or a suggestion).
+  const askNow = (q, opts) => {
+    setQuestion(q);
+    runQuery(q, opts);
   };
 
   const detectJoins = async () => {
@@ -298,6 +346,15 @@ useEffect(() => {
 
         <div className="query-main">
           <div className="query-input-area">
+            {followUp && (
+              <div className="followup-chip">
+                <span className="followup-label">Follow-up to</span>
+                <span className="followup-q">“{followUp.question}”</span>
+                <button type="button" onClick={() => setLastTurn(null)} title="Ask an unrelated question instead">
+                  ✕ Start fresh
+                </button>
+              </div>
+            )}
             <textarea
               ref={inputRef}
               placeholder="Ask a question in plain English... (Ctrl+Enter to run)"
@@ -307,7 +364,7 @@ useEffect(() => {
             />
             {loading && <div style={{ margin: '6px 0' }}><div className="loading-strip"></div></div>}
             <div className="query-actions">
-              <button className="btn btn-primary" onClick={runQuery} disabled={loading || selectedTables.length === 0}>⚡ Run Query</button>
+              <button className="btn btn-primary" onClick={() => runQuery()} disabled={loading || selectedTables.length === 0}>⚡ Run Query</button>
               <button className="btn btn-ghost" onClick={clearQuery}>Clear</button>
               <button className="btn btn-ghost" onClick={() => setTemplatesOpen(v => !v)}>Templates</button>
               <div className="save-query-btn">
@@ -350,7 +407,19 @@ useEffect(() => {
             {currentResult && interpretation && !loading && (
               <div className="query-interpretation">
                 <span className="query-interpretation-label">Interpreted as</span>
-                {interpretation}
+                <div className="query-interpretation-body">
+                  {interpretation}
+                  {alternatives.length > 0 && (
+                    <div className="query-alternatives">
+                      <span className="query-alternatives-label">Other readings:</span>
+                      {alternatives.map(a => (
+                        <button key={a} className="query-alternative" onClick={() => askNow(a, { allowClarify: false, fresh: true })}>
+                          {a}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             {currentResult && (
@@ -374,10 +443,34 @@ useEffect(() => {
                   <div className="empty-text">Generating SQL...</div>
                 </div>
               )}
-              {!loading && !currentResult && (
+              {!loading && clarification && (
+                <div className="clarify-card">
+                  <div className="clarify-q">{clarification.question}</div>
+                  <div className="clarify-sub">“{clarification.original}” could mean different things. Pick one:</div>
+                  <div className="clarify-options">
+                    {clarification.options.map(o => (
+                      <button key={o} className="clarify-option" onClick={() => askNow(o, { allowClarify: false })}>{o}</button>
+                    ))}
+                  </div>
+                  <button className="clarify-anyway" onClick={() => runQuery(clarification.original, { allowClarify: false })}>
+                    Just answer it — make the most reasonable guess
+                  </button>
+                </div>
+              )}
+              {!loading && !currentResult && !clarification && (
                 <div className="empty-state">
                   <div className="empty-icon">⚡</div>
-                  <div className="empty-text">Run a query to see results</div>
+                  <div className="empty-text">
+                    {selectedTables.length === 0 ? 'Select a table, then ask a question' : 'Run a query to see results'}
+                  </div>
+                  {selectedTables.length > 0 && suggestions.length > 0 && (
+                    <div className="query-suggestions">
+                      <div className="query-suggestions-label">Try asking</div>
+                      {suggestions.map(s => (
+                        <button key={s} className="query-suggestion" onClick={() => askNow(s)}>{s}</button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
               {!loading && currentResult && resultTab === 'table' && <ResultTable result={currentResult} />}
